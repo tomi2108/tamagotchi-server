@@ -3,8 +3,8 @@ import { getMessages } from "../services/messages";
 
 export const inboxRoutes = Router()
 
-inboxRoutes.get("/", async (req, res) => {
-  const { recipientId } = req.query;
+inboxRoutes.get("/:recipientId", async (req, res) => {
+  const { recipientId } = req.params;
   if (typeof recipientId !== "string") return res.status(400).end();
   try {
     const inbox = await getMessages(recipientId);

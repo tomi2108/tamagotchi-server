@@ -1,0 +1,10 @@
+@host=tamagotchi-server-production.up.railway.app
+
+###
+
+GET http://{{host}}/
+
+###
+
+GET http://{{host}}/inbox/tomi
+
