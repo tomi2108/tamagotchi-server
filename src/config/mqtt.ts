@@ -9,7 +9,7 @@ export function getMqttClient(): Promise<MqttClient> {
 
   return new Promise((resolve, reject) => {
     const client = mqtt.connect(
-      `mqtts://${env.MQTT_HOST}:8883/mqtt`,
+      `mqtt://${env.MQTT_HOST}:8883/mqtt`,
       {
         username: env.MQTT_USER,
         password: env.MQTT_PASSWORD,
