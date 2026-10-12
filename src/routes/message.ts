@@ -9,7 +9,7 @@ messageRoutes.post("/", async (req, res) => {
     const message = req.body as Message;
     const client = await getMqttClient();
     await saveMessage(message);
-    client.publish(message.topic, encodeMessage(message));
+    client.publish(`/message/${message.recipientId}`, encodeMessage(message));
     return res.status(200).end();
   } catch (error) {
     console.error(error);

@@ -4,7 +4,6 @@ export type Message = {
   senderId: string;
   recipientId: string;
   content: string;
-  topic: string;
 };
 
 export function encodeMessage(message: Message) {
