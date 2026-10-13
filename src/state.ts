@@ -53,7 +53,7 @@ export async function subscribeToState(): Promise<void> {
         const newState = await updateState(action);
 
         mqtt.publish(
-          "couple/123/state",
+          "/state",
           JSON.stringify(newState),
           { qos: 1, retain: true }
         );
