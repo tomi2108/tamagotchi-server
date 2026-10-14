@@ -32,11 +32,11 @@ export class Pet {
   }
 
   tick() {
-    this.state.hunger = Math.max(0, this.state.hunger - 1);
-    this.state.hydration = Math.max(0, this.state.hydration - 1);
-    this.state.happiness = Math.max(0, this.state.happiness - 1);
+    this.state.hunger = Math.max(0, this.state.hunger - 1 / 60);
+    this.state.hydration = Math.max(0, this.state.hydration - 1 / 60);
+    this.state.happiness = Math.max(0, this.state.happiness - 1 / 60);
     if (this.state.status === PetStatus.sleeping)
-      this.state.energy = Math.min(100, this.state.energy + 2);
-    else this.state.energy = Math.max(0, this.state.energy - 1);
+      this.state.energy = Math.min(100, this.state.energy + 2 / 60);
+    else this.state.energy = Math.max(0, this.state.energy - 1 / 60);
   }
 }
