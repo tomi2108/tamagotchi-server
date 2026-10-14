@@ -44,13 +44,19 @@ async function updateState(action: Action): Promise<State> {
 export async function publishNewState(action: Action) {
   const mqtt = await getMqttClient();
   const newState = await updateState(action);
-  mqtt.publish("/state", JSON.stringify({ ...newState, at: Date.now() }), { qos: 1, retain: true });
+  mqtt.publish("/state", JSON.stringify({ ...newState, at: new Date().toISOString() }), {
+    qos: 1,
+    retain: true,
+  });
 }
 
 export async function forceStateUpdate() {
   const mqtt = await getMqttClient();
   const state = await getState();
-  mqtt.publish("/state", JSON.stringify({ ...state, at: Date.now() }), { qos: 1, retain: true });
+  mqtt.publish("/state", JSON.stringify({ ...state, at: new Date().toISOString() }), {
+    qos: 1,
+    retain: true,
+  });
   return state;
 }
 
