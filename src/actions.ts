@@ -22,12 +22,13 @@ export function getNewState(prev: State, action: Action): State {
     case "hungerTick":
       return { ...prev, hunger: Math.max(0, prev.hunger - 1) };
     case "restoreEnergy":
-      return { ...prev, energy: Math.max(100, prev.energy + 1) };
+      return { ...prev, energy: Math.min(100, prev.energy + 1) };
     case "wakeup":
-      startCountdown("restoreEnergy", 2);
+      startCountdown("restoreEnergy");
       return { ...prev, status: PetStatus.idle };
     case "sleep": {
-      const sleepTime = 30;
+      const sleepTime = 15;
+      // TODO: cancel previous timeout
       setTimeout(() => publishNewState({ type: "wakeup" }), 1000 * 60 * sleepTime);
       startCountdown("restoreEnergy", 2);
       return { ...prev, status: PetStatus.sleeping };
