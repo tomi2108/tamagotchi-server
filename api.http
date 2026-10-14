@@ -8,3 +8,7 @@ GET http://{{host}}/
 
 GET http://{{host}}/inbox/tomi
 
+###
+
+GET http://{{host}}/updateState/force
+

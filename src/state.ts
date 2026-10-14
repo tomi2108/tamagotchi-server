@@ -47,6 +47,13 @@ export async function publishNewState(action: Action) {
   mqtt.publish("/state", JSON.stringify(newState), { qos: 1, retain: true });
 }
 
+export async function forceStateUpdate() {
+  const mqtt = await getMqttClient();
+  const state = await getState();
+  mqtt.publish("/state", JSON.stringify(state), { qos: 1, retain: true });
+  return state;
+}
+
 export async function subscribeToState(): Promise<void> {
   const mqtt = await getMqttClient();
 

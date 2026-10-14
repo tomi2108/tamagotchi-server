@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { inboxRoutes } from "./routes/inbox";
 import { messageRoutes } from "./routes/message";
-import { subscribeToState } from "./state";
+import { forceStateUpdate, subscribeToState } from "./state";
 import { startCountdown } from "./countdowns";
 
 const app = express();
@@ -14,6 +14,10 @@ app.use(express.json());
 app.get("/", (_req, res) => res.send("Server is running"));
 app.use("/inbox", inboxRoutes);
 app.use("/message", messageRoutes);
+app.get("/updateState/force", async (_, res) => {
+  const state = await forceStateUpdate();
+  return res.status(200).json(state);
+});
 
 async function main() {
   await subscribeToState();
