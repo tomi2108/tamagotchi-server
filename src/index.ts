@@ -3,6 +3,7 @@ import cors from "cors";
 import { inboxRoutes } from "./routes/inbox";
 import { messageRoutes } from "./routes/message";
 import { subscribeToState } from "./state";
+import { startCountdown } from "./countdowns";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -16,9 +17,9 @@ app.use("/message", messageRoutes);
 
 async function main() {
   await subscribeToState();
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-  });
+  startCountdown("hungerTick");
+  startCountdown("restoreEnergy");
+  app.listen(port, () => console.log(`Server listening on port ${port}`));
 }
 
 main().catch((error: unknown) => {

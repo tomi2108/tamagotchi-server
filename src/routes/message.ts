@@ -1,8 +1,8 @@
 import { getMqttClient } from "../config/mqtt";
-import { saveMessage, encodeMessage, Message } from "../services/messages"
+import { saveMessage, encodeMessage, Message } from "../services/messages";
 import { Router } from "express";
 
-export const messageRoutes = Router()
+export const messageRoutes = Router();
 
 messageRoutes.post("/", async (req, res) => {
   try {
@@ -15,5 +15,4 @@ messageRoutes.post("/", async (req, res) => {
     console.error(error);
     return res.status(500).end();
   }
-
-})
+});

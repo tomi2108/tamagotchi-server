@@ -3,37 +3,48 @@ import { getMqttClient } from "./config/mqtt";
 import { sql } from "./config/sql";
 
 async function initializeState() {
-  const initial = initialState();
+  const { status, is_dead, hunger, energy } = initialState();
   await sql.query(
-    `INSERT INTO pet_state (id, energy, hunger)
-   VALUES (1, $1, $2)
+    `INSERT INTO pet_state (energy, hunger, is_dead, status)
+   VALUES ($1, $2, $3, $4)
    ON CONFLICT (id) DO NOTHING`,
-    [initial.energy, initial.hunger]
+    [energy, hunger, is_dead, status],
   );
-  return initial;
+  return { status, is_dead, hunger, energy };
 }
 
 async function getState(): Promise<State> {
-  const query = await sql.query("SELECT * FROM pet_state WHERE id = 1");
+  const query = await sql.query("SELECT * FROM pet_state WHERE is_dead = false");
   const state = query.rows[0] as State | undefined;
-  if (!state) return await initializeState()
+  // TODO: should probably change this and return a dead
+  // pet until a new one is created
+  if (!state) return await initializeState();
   return state;
 }
 
 async function saveState(state: State): Promise<void> {
   await sql.query(
     `UPDATE pet_state
-     SET energy = $1, hunger = $2
-     WHERE id = 1`,
-    [state.energy, state.hunger]
+     SET energy = $1, 
+       hunger = $2,
+       is_dead= $3,
+       status = $4
+     WHERE is_dead = false`,
+    [state.energy, state.hunger, state.is_dead, state.status],
   );
 }
 
 async function updateState(action: Action): Promise<State> {
   const prevState = await getState();
-  const newState = getNewState(prevState, action)
+  const newState = getNewState(prevState, action);
   await saveState(newState);
   return newState;
+}
+
+export async function publishNewState(action: Action) {
+  const mqtt = await getMqttClient();
+  const newState = await updateState(action);
+  mqtt.publish("/state", JSON.stringify(newState), { qos: 1, retain: true });
 }
 
 export async function subscribeToState(): Promise<void> {
@@ -46,20 +57,9 @@ export async function subscribeToState(): Promise<void> {
   let queue = Promise.resolve();
   mqtt.on("message", (receivedTopic, payload) => {
     if (receivedTopic !== "/actions") return;
-
-    queue = queue
-      .then(async () => {
-        const action = actionDecode(payload);
-        const newState = await updateState(action);
-
-        mqtt.publish(
-          "/state",
-          JSON.stringify(newState),
-          { qos: 1, retain: true }
-        );
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to process pet action:", error);
-      });
+    queue = queue.then(async () => {
+      const action = actionDecode(payload);
+      await publishNewState(action);
+    });
   });
 }
