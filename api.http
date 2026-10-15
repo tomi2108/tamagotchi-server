@@ -59,3 +59,9 @@ Content-Type: application/json
 {
   "name": "Mochi"
 }
+
+###
+
+GET http://{{host}}/wallet
+
+###
