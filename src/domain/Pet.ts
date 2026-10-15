@@ -41,9 +41,14 @@ export class Pet {
     this.state.is_dead = true;
   }
 
-  sleep() {
-    if (this.state.is_dead || this.state.status === PetStatus.sleeping) return;
+  sleep(): number | undefined {
+    if (this.state.is_dead || this.state.status === PetStatus.sleeping) return undefined;
     this.state.status = PetStatus.sleeping;
+    const minMinutes = 2;
+    const maxMinutes = 15;
+    const minutes = Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
+
+    return minutes * 60 * 1000;
   }
 
   hydrate() {

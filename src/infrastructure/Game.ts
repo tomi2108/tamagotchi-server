@@ -4,13 +4,19 @@ import { Pet } from "../domain/Pet";
 import { Inventory } from "./Inventory";
 import { MqttStatePublisher } from "./MqttStatePublisher";
 import { PetRepository } from "./PetRepository";
+import { TimeoutActionScheduler } from "./TimeoutActionScheduler";
 
 const TICK_INTERVAL = 1000;
 let interval: NodeJS.Timeout | undefined;
 
 const petRepository = new PetRepository();
 const inventory = new Inventory();
-const petService = new PetService(inventory);
+const scheduler = new TimeoutActionScheduler();
+const petService = new PetService(inventory, scheduler, (action) => {
+  void dispatch(action).catch((error: unknown) => {
+    console.error("Failed to execute scheduled action:", error);
+  });
+});
 const statePublisher = new MqttStatePublisher();
 
 let pet: Pet | undefined;
@@ -62,7 +68,7 @@ export function dispatch(action: Action): Promise<void> {
       throw new Error("No pet found. Adopt a pet first.");
     }
 
-    if (pet.getState().is_dead && action.type !== "kill") {
+    if (pet.getState().is_dead) {
       if (action.type === "tick") return;
       throw new Error("Pet is dead. Adopt a new pet.");
     }
