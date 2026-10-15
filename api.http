@@ -10,6 +10,10 @@ GET http://{{host}}/inbox/tomi
 
 ###
 
+GET http://{{host}}/state
+
+###
+
 GET http://{{host}}/inbox/rochi
 
 ###

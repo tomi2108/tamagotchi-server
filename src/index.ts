@@ -10,6 +10,7 @@ import { inventoryRouter } from "./routes/inventory";
 import { itemsRouter } from "./routes/items";
 import { shopRouter } from "./routes/shop";
 import { adoptRouter } from "./routes/adopt";
+import { stateRouter } from "./routes/state";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -24,6 +25,7 @@ app.use("/inventory", inventoryRouter);
 app.use("/items", itemsRouter);
 app.use("/shop", shopRouter);
 app.use("/adopt", adoptRouter);
+app.use("/state", stateRouter);
 
 app.get("/updateState/force", async (_, res) => {
   const pet = await new PetRepository().getActive();
