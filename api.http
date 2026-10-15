@@ -41,9 +41,17 @@ GET http://{{host}}/shop
 ###
 
 POST http://{{host}}/shop
-accept: application/json
-Content-type: application/json ; charset=UTF-8
+Content-type: application/json
 
 {
   "itemId": 27
+}
+
+###
+
+POST http://{{host}}/adopt
+Content-Type: application/json
+
+{
+  "name": "Mochi"
 }

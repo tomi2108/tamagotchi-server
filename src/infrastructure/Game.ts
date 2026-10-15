@@ -22,11 +22,15 @@ export async function initializeGame(): Promise<void> {
 }
 
 async function initialize(): Promise<void> {
-  if (pet) return;
-
-  initialization ??= petRepository.getActive().then((loadedPet) => {
-    pet = loadedPet;
-  });
+  initialization ??= petRepository
+    .getActive()
+    .then((loadedPet) => {
+      pet = loadedPet ?? undefined;
+    })
+    .catch((error: unknown) => {
+      initialization = undefined;
+      throw error;
+    });
 
   await initialization;
 }
@@ -34,9 +38,21 @@ async function initialize(): Promise<void> {
 export function dispatch(action: Action): Promise<void> {
   const operation = queue.then(async () => {
     await initialize();
-    await petService.execute(pet!, action);
-    await petRepository.save(pet!);
-    await statePublisher.publish(pet!);
+
+    if (!pet) {
+      if (action.type === "tick") return;
+      throw new Error("No active pet. Adoption is required.");
+    }
+
+    const currentPet = pet;
+
+    await petService.execute(currentPet, action);
+    await petRepository.save(currentPet);
+    await statePublisher.publish(currentPet);
+
+    if (currentPet.getState().is_dead) {
+      pet = undefined;
+    }
   });
 
   queue = operation.catch((error: unknown) => {
@@ -46,10 +62,38 @@ export function dispatch(action: Action): Promise<void> {
   return operation;
 }
 
+export function adoptPet(name: string): Promise<void> {
+  const operation = queue.then(async () => {
+    await initialize();
+
+    if (pet) {
+      throw new Error("An active pet already exists.");
+    }
+
+    const normalizedName = name.trim();
+
+    if (!normalizedName || normalizedName.length > 30) {
+      throw new Error("Pet name must contain 1–30 characters.");
+    }
+
+    const newPet = await petRepository.createInitial(normalizedName);
+
+    pet = newPet;
+    await statePublisher.publish(newPet);
+  });
+
+  queue = operation.catch((error: unknown) => {
+    console.error("Failed to adopt pet:", error);
+  });
+
+  return operation;
+}
+
 export function startGameLoop(): void {
   if (interval) return;
+
   interval = setInterval(() => {
-    dispatch({ type: "tick" });
+    void dispatch({ type: "tick" }).catch(() => { });
   }, TICK_INTERVAL);
 }
 
