@@ -4,11 +4,15 @@ export type EquipmentSlot = "head" | "body" | "accessory";
 
 export type ItemType = "food" | "medicine" | "equippable";
 
+export type ItemRarity = "common" | "uncommon" | "rare" | "legendary";
+
 export type Item = {
   id: number;
   name: string;
   type: ItemType;
   slot: EquipmentSlot | null;
+  price: number;
+  rarity: ItemRarity;
 };
 
 export type EquippableItem = Item & {

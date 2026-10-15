@@ -45,7 +45,7 @@ inventoryRouter.post("/", async (req, res) => {
     }
 
     const quantityToAdd = item.type === "equippable" ? 1 : quantity;
-    await inventory.addItem(item, quantityToAdd);
+    await inventory.addItem(item.id, quantityToAdd);
     res.status(201).json({
       itemId: item.id,
       name: item.name,

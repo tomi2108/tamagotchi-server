@@ -27,8 +27,22 @@ GET http://{{host}}/inventory
 ###
 
 POST http://{{host}}/inventory
+Content-Type: application/json
 
 {
- "itemId" : 1,
+  "itemId" : 1,
   "quantity": 1
+}
+
+###
+
+GET http://{{host}}/shop
+
+###
+
+POST http://{{host}}/shop
+Content-Type: application/json
+
+{
+  "itemId" : 1
 }

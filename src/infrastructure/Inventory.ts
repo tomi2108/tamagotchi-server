@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import { sql } from "../config/sql";
 import { EquipmentSlot, EquippableItem, Item } from "./Item";
 
@@ -71,18 +72,20 @@ export class Inventory {
 
     return result.rows;
   }
-
-  async addItem(item: Item, quantity = 1): Promise<void> {
-    if (!Number.isInteger(quantity) || quantity < 1)
+  async addItem(itemId: number, quantity = 1, client?: PoolClient): Promise<void> {
+    if (!Number.isInteger(quantity) || quantity < 1) {
       throw new Error("Quantity must be a positive integer");
+    }
 
-    await sql.query(
+    const db = client ?? sql;
+
+    await db.query(
       `INSERT INTO pet_inventory (item_id, quantity)
      VALUES ($1, $2)
      ON CONFLICT (item_id)
      DO UPDATE SET quantity =
        pet_inventory.quantity + EXCLUDED.quantity`,
-      [item.id, quantity],
+      [itemId, quantity],
     );
   }
 
