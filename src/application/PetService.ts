@@ -20,6 +20,9 @@ export class PetService {
       case "tick":
         pet.tick();
         break;
+      case "kill":
+        pet.kill();
+        break;
       case "equip": {
         if (!pet.canApplyEffects()) return;
         const item = await this.inventory.equip(action.itemId);

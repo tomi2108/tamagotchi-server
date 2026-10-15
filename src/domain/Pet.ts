@@ -37,6 +37,10 @@ export class Pet {
     return { ...this.state };
   }
 
+  kill() {
+    this.state.is_dead = true;
+  }
+
   sleep() {
     if (this.state.is_dead || this.state.status === PetStatus.sleeping) return;
     this.state.status = PetStatus.sleeping;

@@ -3,9 +3,7 @@ import cors from "cors";
 import { inboxRoutes } from "./routes/inbox";
 import { messageRoutes } from "./routes/message";
 import { subscribeToState } from "./state";
-import { PetRepository } from "./infrastructure/PetRepository";
-import { MqttStatePublisher } from "./infrastructure/MqttStatePublisher";
-import { initializeGame, startGameLoop } from "./infrastructure/Game";
+import { dispatch, forceUpdate, initializeGame, startGameLoop } from "./infrastructure/Game";
 import { inventoryRouter } from "./routes/inventory";
 import { itemsRouter } from "./routes/items";
 import { shopRouter } from "./routes/shop";
@@ -29,13 +27,27 @@ app.use("/adopt", adoptRouter);
 app.use("/state", stateRouter);
 app.use("/wallet", walletRouter);
 
-app.get("/updateState/force", async (_, res) => {
-  const pet = await new PetRepository().getActive();
-  if (pet) {
-    await new MqttStatePublisher().publish(pet);
-    return res.status(200).json(pet.getState());
+app.post("/kill", async (_, res) => {
+  try {
+    await dispatch({ type: "kill" });
+    res.sendStatus(204);
+  } catch (error) {
+    res.status(500).json({
+      error: error instanceof Error ? error.message : "Error al matar a la mascota",
+    });
   }
-  return res.status(404);
+});
+
+app.get("/updateState/force", async (_, res) => {
+  try {
+    const pet = await forceUpdate();
+    if (!pet) return res.sendStatus(404);
+    return res.status(200).json(pet.getState());
+  } catch (error) {
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : "Failed to update state",
+    });
+  }
 });
 
 async function main() {

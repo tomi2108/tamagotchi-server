@@ -17,6 +17,24 @@ let pet: Pet | undefined;
 let queue: Promise<void> = Promise.resolve();
 let initialization: Promise<void> | undefined;
 
+export function forceUpdate(): Promise<Pet | undefined> {
+  const operation = queue.then(async () => {
+    const loadedPet = await petRepository.getActive();
+    pet = loadedPet ?? undefined;
+    if (pet) {
+      await statePublisher.publish(pet);
+    }
+    return pet;
+  });
+  queue = operation.then(
+    () => undefined,
+    (error: unknown) => {
+      console.error("Failed to force update:", error);
+    },
+  );
+  return operation;
+}
+
 export async function initializeGame(): Promise<void> {
   await initialize();
 }
@@ -41,7 +59,12 @@ export function dispatch(action: Action): Promise<void> {
 
     if (!pet) {
       if (action.type === "tick") return;
-      throw new Error("No active pet. Adoption is required.");
+      throw new Error("No pet found. Adopt a pet first.");
+    }
+
+    if (pet.getState().is_dead && action.type !== "kill") {
+      if (action.type === "tick") return;
+      throw new Error("Pet is dead. Adopt a new pet.");
     }
 
     const currentPet = pet;
@@ -49,10 +72,6 @@ export function dispatch(action: Action): Promise<void> {
     await petService.execute(currentPet, action);
     await petRepository.save(currentPet);
     await statePublisher.publish(currentPet);
-
-    if (currentPet.getState().is_dead) {
-      pet = undefined;
-    }
   });
 
   queue = operation.catch((error: unknown) => {
@@ -66,9 +85,7 @@ export function adoptPet(name: string): Promise<void> {
   const operation = queue.then(async () => {
     await initialize();
 
-    if (pet) {
-      throw new Error("An active pet already exists.");
-    }
+    if (pet && !pet.getState().is_dead) throw new Error("An active pet already exists.");
 
     const normalizedName = name.trim();
 

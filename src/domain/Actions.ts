@@ -11,4 +11,4 @@ export const actionSchema = z.discriminatedUnion("type", [
 
 export type Action = z.infer<typeof actionSchema> | InternalAction;
 export type ActionType = Action["type"];
-type InternalAction = { type: "tick" };
+type InternalAction = { type: "tick" } | { type: "kill" };

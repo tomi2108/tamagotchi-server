@@ -65,3 +65,8 @@ Content-Type: application/json
 GET http://{{host}}/wallet
 
 ###
+
+POST http://{{host}}/kill
+Content-Type: application/json
+
+###
