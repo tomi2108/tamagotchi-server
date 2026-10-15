@@ -57,10 +57,10 @@ export class Shop {
       client.release();
     }
   }
-
   async buy(itemId: number): Promise<{
     itemId: number;
     name: string;
+    quantity: number;
     coins: number;
     stock: number;
   }> {
@@ -78,51 +78,43 @@ export class Shop {
 
       const result = await client.query(
         `SELECT i.id, i.name, i.type, i.slot, i.price, i.rarity,
-                si.stock
-         FROM shop_items si
-         JOIN items i ON i.id = si.item_id
-         WHERE si.rotation_id = $1 AND si.item_id = $2
-         FOR UPDATE OF si`,
+              si.stock
+       FROM shop_items si
+       JOIN items i ON i.id = si.item_id
+       WHERE si.rotation_id = $1 AND si.item_id = $2
+       FOR UPDATE OF si`,
         [rotation.id, itemId],
       );
 
       const item = result.rows[0] as ShopItem | undefined;
 
-      if (!item) {
-        throw new Error("Item is not available in the current shop");
-      }
-
-      if (item.stock <= 0) {
-        throw new Error("Item is out of stock");
-      }
+      if (!item) throw new Error("Item is not available in the current shop");
+      if (item.stock <= 0) throw new Error("Item is out of stock");
 
       if (item.type === "equippable") {
         const owned = await client.query(
           `SELECT 1
-           FROM pet_inventory
-           WHERE item_id = $1
-           UNION ALL
-           SELECT 1
-           FROM pet_equipment
-           WHERE item_id = $1
-           LIMIT 1`,
+         FROM pet_inventory
+         WHERE item_id = $1
+         UNION ALL
+         SELECT 1
+         FROM pet_equipment
+         WHERE item_id = $1
+         LIMIT 1`,
           [itemId],
         );
 
-        if (owned.rowCount) {
-          throw new Error("Equippable item already owned");
-        }
+        if (owned.rowCount) throw new Error("Equippable item already owned");
       }
 
-      const coins = await this.wallet.spendCoins(item.price, client);
+      const coins = await this.wallet.spendCoins(item.price * item.stock, client);
 
-      await this.inventory.addItem(item.id, 1, client);
+      await this.inventory.addItem(item.id, item.stock, client);
 
-      const stockResult = await client.query(
+      await client.query(
         `UPDATE shop_items
-         SET stock = stock - 1
-         WHERE rotation_id = $1 AND item_id = $2
-         RETURNING stock`,
+       SET stock = 0
+       WHERE rotation_id = $1 AND item_id = $2`,
         [rotation.id, itemId],
       );
 
@@ -131,8 +123,9 @@ export class Shop {
       return {
         itemId: item.id,
         name: item.name,
+        quantity: item.stock,
         coins,
-        stock: stockResult.rows[0].stock,
+        stock: 0,
       };
     } catch (error) {
       await client.query("ROLLBACK");
@@ -168,9 +161,7 @@ export class Shop {
 
     const rotation = result.rows[0];
 
-    if (!rotation) {
-      throw new Error("Failed to initialize shop rotation");
-    }
+    if (!rotation) throw new Error("Failed to initialize shop rotation");
 
     const existing = await client.query(
       `SELECT 1
@@ -183,17 +174,17 @@ export class Shop {
     if (existing.rowCount === 0) {
       const catalog = await this.itemRepository.getItems(client);
 
-      if (catalog.length < SHOP_SIZE) {
+      if (catalog.length < SHOP_SIZE)
         throw new Error(`Shop requires at least ${SHOP_SIZE} catalog items`);
-      }
 
       const selected = this.selectItems(catalog);
 
       for (const item of selected) {
+        const stock = item.type === "equippable" ? 1 : rarityStock[item.rarity];
         await client.query(
           `INSERT INTO shop_items (rotation_id, item_id, stock)
-           VALUES ($1, $2, $3)`,
-          [rotation.id, item.id, rarityStock[item.rarity]],
+   VALUES ($1, $2, $3)`,
+          [rotation.id, item.id, stock],
         );
       }
     }
