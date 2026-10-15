@@ -36,6 +36,11 @@ export class PetRepository {
 
   async createInitial(): Promise<Pet> {
     const pet = new Pet({
+      equipment: {
+        accessory: null,
+        body: null,
+        head: null,
+      },
       energy: 100,
       hunger: 100,
       hydration: 100,

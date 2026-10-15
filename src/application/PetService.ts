@@ -1,10 +1,12 @@
 import { Action } from "../domain/Actions";
 import { Pet } from "../domain/Pet";
+import { Inventory } from "../infrastructure/Inventory";
+import { itemEffects } from "../infrastructure/Item";
 
 export class PetService {
-  constructor() { }
+  constructor(private inventory: Inventory) { }
 
-  execute(pet: Pet, action: Action) {
+  async execute(pet: Pet, action: Action) {
     switch (action.type) {
       case "sleep":
         pet.sleep();
@@ -15,6 +17,24 @@ export class PetService {
       case "tick":
         pet.tick();
         break;
+      case "equip":
+        const item = await this.inventory.equip(action.itemId);
+        pet.equip(item);
+        break;
+      case "unequip":
+        await this.inventory.unequip(action.slot);
+        pet.unequip(action.slot);
+        break;
+      case "consume": {
+        const item = await this.inventory.getItem(action.itemId);
+        if (!item || item.type === "equippable") return;
+        const effects = itemEffects[item.name];
+        if (!effects) return;
+        if (!pet.canApplyEffects()) return;
+        await this.inventory.removeItem(action.itemId);
+        pet.applyEffects(effects);
+        break;
+      }
     }
   }
 }

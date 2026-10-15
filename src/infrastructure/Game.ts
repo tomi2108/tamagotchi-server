@@ -1,5 +1,6 @@
 import { PetService } from "../application/PetService";
 import { Action } from "../domain/Actions";
+import { Inventory } from "./Inventory";
 import { MqttStatePublisher } from "./MqttStatePublisher";
 import { PetRepository } from "./PetRepository";
 
@@ -7,7 +8,7 @@ const TICK_INTERVAL = 1000;
 let interval: NodeJS.Timeout | undefined;
 
 const petRepository = new PetRepository();
-const petService = new PetService();
+const petService = new PetService(new Inventory());
 const statePublisher = new MqttStatePublisher();
 
 let queue: Promise<void> = Promise.resolve();
