@@ -10,5 +10,25 @@ GET http://{{host}}/inbox/tomi
 
 ###
 
+GET http://{{host}}/inbox/rochi
+
+###
+
 GET http://{{host}}/updateState/force
 
+###
+
+GET http://{{host}}/items
+
+###
+
+GET http://{{host}}/inventory
+
+###
+
+POST http://{{host}}/inventory
+
+{
+ "itemId" : 1,
+  "quantity": 1
+}

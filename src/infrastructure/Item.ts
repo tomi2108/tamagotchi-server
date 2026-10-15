@@ -1,9 +1,25 @@
 import { PetState } from "../domain/Pet";
 
 export type EquipmentSlot = "head" | "body" | "accessory";
-export type Item = { id: number; name: string };
-export type EquippableItem = Item & { slot: EquipmentSlot };
-export type ConsumableItem = Item & { quantity: number };
+
+export type ItemType = "food" | "medicine" | "equippable";
+
+export type Item = {
+  id: number;
+  name: string;
+  type: ItemType;
+  slot: EquipmentSlot | null;
+};
+
+export type EquippableItem = Item & {
+  type: "equippable";
+  slot: EquipmentSlot;
+};
+
+export type ConsumableItem = Omit<Item, "slot"> & {
+  type: Exclude<ItemType, "equippable">;
+  quantity: number;
+};
 
 export type ItemEffects = Partial<
   Pick<PetState, "hunger" | "hydration" | "energy" | "happiness" | "cleanliness">

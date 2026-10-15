@@ -1,5 +1,5 @@
 import { sql } from "../config/sql";
-import { ConsumableItem, EquipmentSlot, EquippableItem, Item } from "./Item";
+import { EquipmentSlot, EquippableItem, Item } from "./Item";
 
 export class Inventory {
   async getItem(itemId: number) {
@@ -12,6 +12,16 @@ export class Inventory {
     );
 
     return result.rows[0] ?? null;
+  }
+
+  async getInventory() {
+    const result = await sql.query(
+      `SELECT i.id, i.name, i.type, i.slot, inv.quantity
+     FROM pet_inventory inv
+     JOIN items i ON i.id = inv.item_id
+     ORDER BY i.name`,
+    );
+    return result.rows;
   }
 
   async removeItem(itemId: number, quantity = 1): Promise<void> {
@@ -57,17 +67,6 @@ export class Inventory {
       `SELECT e.slot, i.id, i.name
        FROM pet_equipment e
        JOIN items i ON i.id = e.item_id`,
-    );
-
-    return result.rows;
-  }
-
-  async getConsumables(): Promise<ConsumableItem[]> {
-    const result = await sql.query(
-      `SELECT i.id, i.name, inv.quantity
-       FROM pet_inventory inv
-       JOIN items i ON i.id = inv.item_id
-       WHERE i.type <> 'equippable'`,
     );
 
     return result.rows;

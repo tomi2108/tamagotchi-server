@@ -6,6 +6,8 @@ import { subscribeToState } from "./state";
 import { PetRepository } from "./infrastructure/PetRepository";
 import { MqttStatePublisher } from "./infrastructure/MqttStatePublisher";
 import { initializeGame, startGameLoop } from "./infrastructure/Game";
+import { inventoryRouter } from "./routes/inventory";
+import { itemsRouter } from "./routes/items";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -16,6 +18,8 @@ app.use(express.json());
 app.get("/", (_req, res) => res.send("Server is running"));
 app.use("/inbox", inboxRoutes);
 app.use("/message", messageRoutes);
+app.use("/inventory", inventoryRouter);
+app.use("/items", itemsRouter);
 
 app.get("/updateState/force", async (_, res) => {
   const pet = await new PetRepository().getActive();
