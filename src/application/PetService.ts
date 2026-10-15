@@ -14,6 +14,9 @@ export class PetService {
       case "wakeup":
         pet.wakeup();
         break;
+      case "hydrate":
+        pet.hydrate();
+        break;
       case "tick":
         pet.tick();
         break;

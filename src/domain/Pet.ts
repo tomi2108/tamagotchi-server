@@ -42,6 +42,10 @@ export class Pet {
     this.state.status = PetStatus.sleeping;
   }
 
+  hydrate() {
+    this.state.hydration = Math.min(100, this.state.hydration + 10);
+  }
+
   equip(item: EquippableItem): void {
     if (this.state.is_dead) return;
     this.state.equipment[item.slot] = item;
