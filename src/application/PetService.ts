@@ -17,14 +17,18 @@ export class PetService {
       case "tick":
         pet.tick();
         break;
-      case "equip":
+      case "equip": {
+        if (!pet.canApplyEffects()) return;
         const item = await this.inventory.equip(action.itemId);
         pet.equip(item);
         break;
-      case "unequip":
+      }
+      case "unequip": {
+        if (!pet.canApplyEffects()) return;
         await this.inventory.unequip(action.slot);
         pet.unequip(action.slot);
         break;
+      }
       case "consume": {
         const item = await this.inventory.getItem(action.itemId);
         if (!item || item.type === "equippable") return;

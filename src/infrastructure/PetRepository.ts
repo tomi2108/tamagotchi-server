@@ -1,12 +1,21 @@
 import { sql } from "../config/sql";
 import { Pet, type PetState, PetStatus } from "../domain/Pet";
+import { Inventory } from "./Inventory";
 
 export class PetRepository {
   async getActive(): Promise<Pet> {
     const result = await sql.query("SELECT * FROM pet_state WHERE is_dead = false LIMIT 1");
+
     const state = result.rows[0] as PetState | undefined;
-    if (state) return new Pet(state);
-    return this.createInitial();
+
+    if (!state) return this.createInitial();
+
+    const inventory = new Inventory();
+    const equippedItems = await inventory.getEquipped();
+
+    const equipment: PetState["equipment"] = { head: null, body: null, accessory: null };
+    for (const item of equippedItems) equipment[item.slot] = item;
+    return new Pet({ ...state, equipment });
   }
 
   async save(pet: Pet): Promise<void> {

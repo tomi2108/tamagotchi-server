@@ -5,7 +5,7 @@ import { messageRoutes } from "./routes/message";
 import { subscribeToState } from "./state";
 import { PetRepository } from "./infrastructure/PetRepository";
 import { MqttStatePublisher } from "./infrastructure/MqttStatePublisher";
-import { startGameLoop } from "./infrastructure/Game";
+import { initializeGame, startGameLoop } from "./infrastructure/Game";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -24,6 +24,7 @@ app.get("/updateState/force", async (_, res) => {
 });
 
 async function main() {
+  await initializeGame();
   await subscribeToState();
   startGameLoop();
   app.listen(port, () => console.log(`Server listening on port ${port}`));
