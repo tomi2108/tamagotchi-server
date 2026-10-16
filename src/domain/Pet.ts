@@ -1,16 +1,33 @@
 import { EquippableItem, ItemEffects } from "../infrastructure/Item";
 
-export const PetStatus = {
-  idle: "idle",
-  sleeping: "sleeping",
-} as const;
+export const PetStatus = { idle: "idle", sleeping: "sleeping" } as const;
 export type PetStatus = (typeof PetStatus)[keyof typeof PetStatus];
+export const petSpecies = [
+  {
+    id: "cat",
+    name: "Cat",
+    description: "Curious and independent.",
+  },
+  {
+    id: "dog",
+    name: "Dog",
+    description: "Loyal and playful.",
+  },
+  {
+    id: "rabbit",
+    name: "Rabbit",
+    description: "Quiet and energetic.",
+  },
+] as const;
+
+export type PetSpecies = (typeof petSpecies)[number]["id"];
 
 export type EquipmentSlot = "head" | "body" | "accessory";
 export type EquippedItems = Record<EquipmentSlot, EquippableItem | null>;
 
 export type PetState = {
   name: string;
+  species: PetSpecies;
   energy: number;
   hunger: number;
   hydration: number;

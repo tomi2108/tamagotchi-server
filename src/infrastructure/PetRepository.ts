@@ -1,6 +1,6 @@
 import { PoolClient } from "pg";
 import { sql } from "../config/sql";
-import { Pet, type PetState, PetStatus } from "../domain/Pet";
+import { Pet, type PetState, PetStatus, PetSpecies } from "../domain/Pet";
 import { Inventory } from "./Inventory";
 
 type PetRow = Omit<PetState, "hunger_zero_since" | "hydration_zero_since"> & {
@@ -10,6 +10,32 @@ type PetRow = Omit<PetState, "hunger_zero_since" | "hydration_zero_since"> & {
 };
 
 export class PetRepository {
+  async getLastDead(): Promise<Pet | null> {
+    const result = await sql.query<PetRow>(
+      `SELECT *
+     FROM pet_state
+     WHERE is_dead = TRUE
+     ORDER BY dead_at DESC NULLS LAST
+     LIMIT 1`,
+    );
+
+    const row = result.rows[0];
+    if (!row) return null;
+
+    const { id, ...state } = row;
+
+    return new Pet(id, {
+      ...state,
+      hunger_zero_since: row.hunger_zero_since?.getTime() ?? null,
+      hydration_zero_since: row.hydration_zero_since?.getTime() ?? null,
+      equipment: {
+        head: null,
+        body: null,
+        accessory: null,
+      },
+    });
+  }
+
   async getDead(): Promise<Pet[]> {
     const result = await sql.query<PetRow>(
       `SELECT *
@@ -117,12 +143,13 @@ export class PetRepository {
     );
   }
 
-  async createInitial(name: string): Promise<Pet> {
+  async createInitial(name: string, species: PetSpecies): Promise<Pet> {
     const state: PetState = {
+      name,
+      species,
       dead_at: null,
       hunger_zero_since: null,
       hydration_zero_since: null,
-      name,
       equipment: {
         head: null,
         body: null,
@@ -140,6 +167,7 @@ export class PetRepository {
     const result = await sql.query<{ id: number }>(
       `INSERT INTO pet_state (
        name,
+       species,
        energy,
        hunger,
        hydration,
@@ -148,10 +176,11 @@ export class PetRepository {
        is_dead,
        status
      )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING id`,
       [
         state.name,
+        state.species,
         state.energy,
         state.hunger,
         state.hydration,

@@ -2,7 +2,7 @@ import { MissionTracker } from "../application/MissionTracker";
 import { PetService } from "../application/PetService";
 import { sql } from "../config/sql";
 import { Action } from "../domain/Actions";
-import { Pet } from "../domain/Pet";
+import { Pet, PetSpecies } from "../domain/Pet";
 import { Inventory } from "./Inventory";
 import { MqttStatePublisher } from "./MqttStatePublisher";
 import { PetRepository } from "./PetRepository";
@@ -108,7 +108,7 @@ export function dispatch(action: Action): Promise<void> {
   return operation;
 }
 
-export function adoptPet(name: string): Promise<void> {
+export function adoptPet(name: string, species: PetSpecies): Promise<void> {
   const operation = queue.then(async () => {
     await initialize();
 
@@ -120,7 +120,7 @@ export function adoptPet(name: string): Promise<void> {
       throw new Error("Pet name must contain 1–30 characters.");
     }
 
-    const newPet = await petRepository.createInitial(normalizedName);
+    const newPet = await petRepository.createInitial(normalizedName, species);
 
     pet = newPet;
     await statePublisher.publish(newPet);
