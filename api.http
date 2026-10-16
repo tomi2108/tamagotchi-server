@@ -85,3 +85,46 @@ Content-Type: application/json
 {
   "missionId": 1
 }
+
+###
+
+GET http://{{host}}/garden
+
+###
+
+POST http://{{host}}/garden/plant
+Content-Type: application/json
+
+{
+  "plotNumber": 1,
+  "seedCode": "strawberry_seed"
+}
+
+###
+
+POST http://{{host}}/garden/harvest
+Content-Type: application/json
+
+{
+  "plotNumber": 1
+}
+
+###
+ 
+GET http://{{host}}/minigames
+
+###
+
+POST http://{{host}}/minigames/scores
+Content-Type: application/json
+
+{
+  "gameCode": "memory",
+  "playerId": 1,
+  "score": 1000
+}
+
+###
+
+GET http://{{host}}/minigames/memory/leaderboard
+

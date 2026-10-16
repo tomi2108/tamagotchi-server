@@ -54,6 +54,14 @@ export class Pet {
     return minutes * 60 * 1000;
   }
 
+  playMinigame(score: number): void {
+    if (this.state.is_dead) return;
+    const impact = Math.min(20, Math.floor(Math.sqrt(score) / 5));
+    this.state.cleanliness = Math.max(0, this.state.cleanliness - impact);
+    this.state.energy = Math.max(0, this.state.energy - impact);
+    this.state.happiness = Math.min(100, this.state.happiness + impact);
+  }
+
   hydrate() {
     this.state.hydration = Math.min(100, this.state.hydration + 10);
   }
