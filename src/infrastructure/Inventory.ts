@@ -26,29 +26,37 @@ export class Inventory {
     return result.rows;
   }
 
-  async removeItem(itemId: number, client: PoolClient, quantity = 1): Promise<void> {
+  async removeItem(
+    itemId: number,
+    client: PoolClient,
+    quantity = 1,
+  ): Promise<void> {
     if (!Number.isInteger(quantity) || quantity < 1) {
       throw new Error("Quantity must be a positive integer");
     }
 
     const result = await client.query(
-      `UPDATE pet_inventory
-       SET quantity = quantity - $2
-       WHERE item_id = $1
-         AND quantity >= $2
-       RETURNING quantity`,
+      `DELETE FROM pet_inventory
+     WHERE item_id = $1
+       AND quantity = $2
+     RETURNING item_id`,
       [itemId, quantity],
     );
 
-    if (result.rowCount === 0) {
-      throw new Error("Item not found in inventory or insufficient quantity");
-    }
+    if (result.rowCount) return;
 
-    if (result.rows[0].quantity === 0) {
-      await client.query(
-        `DELETE FROM pet_inventory
-         WHERE item_id = $1`,
-        [itemId],
+    const update = await client.query(
+      `UPDATE pet_inventory
+     SET quantity = quantity - $2
+     WHERE item_id = $1
+       AND quantity > $2
+     RETURNING quantity`,
+      [itemId, quantity],
+    );
+
+    if (!update.rowCount) {
+      throw new Error(
+        "Item not found in inventory or insufficient quantity",
       );
     }
   }
