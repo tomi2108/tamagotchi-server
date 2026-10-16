@@ -73,7 +73,7 @@ export class Pet {
 
   playMinigame(score: number): void {
     if (this.state.is_dead) return;
-    const impact = Math.min(20, Math.floor(Math.sqrt(score) / 5));
+    const impact = Math.min(15, Math.max(1, Math.floor(Math.log2(score + 1) * 1.5)));
     this.state.cleanliness = Math.max(0, this.state.cleanliness - impact);
     this.state.energy = Math.max(0, this.state.energy - impact);
     this.state.happiness = Math.min(100, this.state.happiness + impact);
