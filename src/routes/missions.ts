@@ -31,18 +31,11 @@ missionsRouter.post("/complete", async (req, res) => {
 
   try {
     const result = await missions.completeMission(parsed.data.missionId);
-    res.json({ success: true, ...result });
+
+    res.json(result);
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === "Daily mission not found") {
-        res.status(404).json({ error: error.message });
-        return;
-      }
-
-      if (
-        error.message === "Mission cannot be claimed manually" ||
-        error.message === "Mission already completed"
-      ) {
+      if (error.message === "Mission not found, already completed, or not manual") {
         res.status(409).json({ error: error.message });
         return;
       }

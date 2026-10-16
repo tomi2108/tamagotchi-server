@@ -1,40 +1,52 @@
-import { sql } from "../config/sql";
 import type { PoolClient } from "pg";
+import { sql } from "../config/sql";
 import { Wallet } from "./Wallet";
 
-const DAILY_MISSION_COUNT = 10;
+const AUTOMATIC_MISSION_COUNT = 10;
+const MANUAL_MISSION_COUNT = 10;
 const DAILY_MISSION_LOCK = 842018;
+const TIME_ZONE = "America/Argentina/Buenos_Aires";
 
-export type DailyMission = {
-  id: number;
-  code: string;
-  title: string;
-  description: string;
-  type: "automatic" | "manual";
-  event_type: string | null;
-  target: number;
-  progress: number;
-  conditions: Record<string, unknown>;
-  reward_coins: number;
-  completed_at: Date | null;
-};
+type MissionType = "automatic" | "manual";
 
 export class Missions {
   private wallet = new Wallet();
 
-  async getDailyMissions(): Promise<DailyMission[]> {
+  async getDailyMissions() {
     const client = await sql.connect();
 
     try {
       await client.query("BEGIN");
-      await client.query("SELECT pg_advisory_xact_lock($1)", [DAILY_MISSION_LOCK]);
 
-      const missionDate = await this.ensureCurrentDay(client);
-      const missions = await this.getMissions(client, missionDate);
+      await this.ensureCurrentDay(client);
+
+      const { rows } = await client.query(
+        `SELECT
+           dm.id,
+           md.code,
+           md.title,
+           md.description,
+           md.type,
+           dm.target,
+           dm.progress,
+           dm.reward_coins,
+           dm.completed_at
+         FROM daily_missions dm
+         JOIN mission_definitions md ON md.id = dm.mission_id
+         WHERE dm.mission_date =
+           (NOW() AT TIME ZONE $1)::date
+         ORDER BY
+           CASE md.type
+             WHEN 'automatic' THEN 0
+             ELSE 1
+           END,
+           dm.id`,
+        [TIME_ZONE],
+      );
 
       await client.query("COMMIT");
 
-      return missions;
+      return rows;
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -43,115 +55,121 @@ export class Missions {
     }
   }
 
-  async completeMission(missionId: number): Promise<{ coins: number }> {
-    if (!Number.isSafeInteger(missionId) || missionId <= 0) {
-      throw new Error("Invalid mission ID");
-    }
-
+  async completeMission(missionId: number) {
     const client = await sql.connect();
 
     try {
       await client.query("BEGIN");
-      await client.query("SELECT pg_advisory_xact_lock($1)", [DAILY_MISSION_LOCK]);
 
-      const missionDate = await this.ensureCurrentDay(client);
+      await this.ensureCurrentDay(client);
 
-      const result = await client.query<{
-        id: number;
-        type: string;
-        target: number;
-        progress: number;
-        reward_coins: number;
-        completed_at: Date | null;
-      }>(
-        `SELECT
-         dm.id,
-         md.type,
-         dm.target,
-         dm.progress,
-         dm.reward_coins,
-         dm.completed_at
+      const { rows } = await client.query(
+        `UPDATE daily_missions dm
+         SET
+           progress = dm.target,
+           completed_at = NOW()
+         FROM mission_definitions md
+         WHERE dm.mission_id = md.id
+           AND dm.id = $1
+           AND md.type = 'manual'
+           AND dm.mission_date =
+             (NOW() AT TIME ZONE $2)::date
+           AND dm.completed_at IS NULL
+         RETURNING dm.reward_coins`,
+        [missionId, TIME_ZONE],
+      );
+
+      if (rows.length === 0) {
+        throw new Error("Mission not found, already completed, or not manual");
+      }
+
+      const coins = rows[0].reward_coins;
+
+      await this.wallet.addCoins(coins, client);
+
+      await client.query("COMMIT");
+
+      return { success: true, coins };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  private async ensureCurrentDay(client: PoolClient) {
+    await client.query("SELECT pg_advisory_xact_lock($1)", [DAILY_MISSION_LOCK]);
+
+    const { rows: dateRows } = await client.query(
+      `SELECT (NOW() AT TIME ZONE $1)::date AS mission_date`,
+      [TIME_ZONE],
+    );
+
+    const missionDate = dateRows[0].mission_date;
+
+    const { rows: countRows } = await client.query(
+      `SELECT
+         COUNT(*) FILTER (
+           WHERE md.type = 'automatic'
+         )::int AS automatic_count,
+         COUNT(*) FILTER (
+           WHERE md.type = 'manual'
+         )::int AS manual_count
        FROM daily_missions dm
        JOIN mission_definitions md ON md.id = dm.mission_id
-       WHERE dm.id = $1
-         AND dm.mission_date = $2
-       FOR UPDATE OF dm`,
-        [missionId, missionDate],
-      );
-
-      const mission = result.rows[0];
-
-      if (!mission) {
-        throw new Error("Daily mission not found");
-      }
-
-      if (mission.type !== "manual") {
-        throw new Error("Mission cannot be claimed manually");
-      }
-
-      if (mission.completed_at) {
-        throw new Error("Mission already completed");
-      }
-
-      const updated = await client.query(
-        `UPDATE daily_missions
-       SET progress = target,
-           completed_at = CURRENT_TIMESTAMP
-       WHERE id = $1
-         AND completed_at IS NULL
-       RETURNING id`,
-        [missionId],
-      );
-
-      if (updated.rowCount !== 1) {
-        throw new Error("Mission already completed");
-      }
-
-      if (mission.reward_coins > 0) {
-        await this.wallet.addCoins(mission.reward_coins, client);
-      }
-
-      await client.query("COMMIT");
-
-      return { coins: mission.reward_coins };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
-
-  private async ensureCurrentDay(client: PoolClient): Promise<string> {
-    const dateResult = await client.query<{ mission_date: string }>(`
-      SELECT (
-        CURRENT_TIMESTAMP AT TIME ZONE
-        'America/Argentina/Buenos_Aires'
-      )::date::text AS mission_date
-    `);
-
-    const missionDate = dateResult.rows[0].mission_date;
-
-    const existing = await client.query(
-      `SELECT 1
-       FROM daily_missions
-       WHERE mission_date = $1
-       LIMIT 1`,
+       WHERE dm.mission_date = $1`,
       [missionDate],
     );
 
-    if (existing.rowCount !== 0) return missionDate;
+    const automaticCount = countRows[0].automatic_count;
+    const manualCount = countRows[0].manual_count;
 
-    const catalog = await client.query<{ count: string }>(
-      `SELECT COUNT(*) AS count
-       FROM mission_definitions`,
+    await this.ensureMissionType(
+      client,
+      missionDate,
+      "automatic",
+      automaticCount,
+      AUTOMATIC_MISSION_COUNT,
     );
 
-    if (Number(catalog.rows[0].count) < DAILY_MISSION_COUNT) {
-      throw new Error(`Mission catalog requires at least ${DAILY_MISSION_COUNT} missions`);
+    await this.ensureMissionType(client, missionDate, "manual", manualCount, MANUAL_MISSION_COUNT);
+  }
+
+  private async ensureMissionType(
+    client: PoolClient,
+    missionDate: string,
+    type: MissionType,
+    currentCount: number,
+    targetCount: number,
+  ) {
+    const missingCount = targetCount - currentCount;
+
+    if (missingCount <= 0) {
+      return;
     }
 
-    const inserted = await client.query(
+    const { rows: availableRows } = await client.query(
+      `SELECT COUNT(*)::int AS count
+       FROM mission_definitions md
+       WHERE md.type = $1
+         AND NOT EXISTS (
+           SELECT 1
+           FROM daily_missions dm
+           WHERE dm.mission_id = md.id
+             AND dm.mission_date = $2
+         )`,
+      [type, missionDate],
+    );
+
+    if (availableRows[0].count < missingCount) {
+      throw new Error(
+        `Not enough ${type} mission definitions. ` +
+        `Need ${missingCount}, have ${availableRows[0].count}.`,
+      );
+    }
+
+    const { rowCount } = await client.query(
       `INSERT INTO daily_missions (
          mission_id,
          mission_date,
@@ -160,46 +178,24 @@ export class Missions {
          reward_coins
        )
        SELECT
-         id,
-         $1,
-         target,
+         md.id,
+         $2,
+         md.target,
          0,
-         reward_coins
-       FROM mission_definitions
+         md.reward_coins
+       FROM mission_definitions md
+       WHERE md.type = $1
+         AND NOT EXISTS (
+           SELECT 1
+           FROM daily_missions dm
+           WHERE dm.mission_id = md.id
+             AND dm.mission_date = $2
+         )
        ORDER BY random()
-       LIMIT $2
-       RETURNING id`,
-      [missionDate, DAILY_MISSION_COUNT],
+       LIMIT $3`,
+      [type, missionDate, missingCount],
     );
 
-    if (inserted.rowCount !== DAILY_MISSION_COUNT) {
-      throw new Error("Failed to generate daily missions");
-    }
-
-    return missionDate;
-  }
-
-  private async getMissions(client: PoolClient, missionDate: string): Promise<DailyMission[]> {
-    const result = await client.query<DailyMission>(
-      `SELECT
-         dm.id,
-         md.code,
-         md.title,
-         md.description,
-         md.type,
-         md.event_type,
-         dm.target,
-         dm.progress,
-         md.conditions,
-         dm.reward_coins,
-         dm.completed_at
-       FROM daily_missions dm
-       JOIN mission_definitions md ON md.id = dm.mission_id
-       WHERE dm.mission_date = $1
-       ORDER BY dm.id`,
-      [missionDate],
-    );
-
-    return result.rows;
+    if (rowCount !== missingCount) throw new Error(`Failed to generate ${type} daily missions`);
   }
 }
