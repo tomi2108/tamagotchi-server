@@ -5,18 +5,18 @@ export type PetStatus = (typeof PetStatus)[keyof typeof PetStatus];
 export const petSpecies = [
   {
     id: "cat",
-    name: "Cat",
-    description: "Curious and independent.",
+    name: "Gato",
+    description: "Curioso e independiente.",
   },
   {
     id: "dog",
-    name: "Dog",
-    description: "Loyal and playful.",
+    name: "Perro",
+    description: "Leal y juguetón.",
   },
   {
     id: "rabbit",
-    name: "Rabbit",
-    description: "Quiet and energetic.",
+    name: "Conejo",
+    description: "Tranquilo y enérgico.",
   },
 ] as const;
 
