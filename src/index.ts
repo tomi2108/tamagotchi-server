@@ -14,6 +14,7 @@ import { cemeteryRouter } from "./routes/cemetery";
 import missionsRouter from "./routes/missions";
 import { gardenRouter } from "./routes/garden";
 import { minigameRouter } from "./routes/minigame";
+import { playersRoutes } from "./routes/players";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -34,7 +35,7 @@ app.use("/cemetery", cemeteryRouter);
 app.use("/missions", missionsRouter);
 app.use("/garden", gardenRouter);
 app.use("/minigames", minigameRouter);
-app.use("/players", playersRouter);
+app.use("/players", playersRoutes);
 
 app.post("/kill", async (_, res) => {
   try {
