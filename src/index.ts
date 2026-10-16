@@ -34,6 +34,7 @@ app.use("/cemetery", cemeteryRouter);
 app.use("/missions", missionsRouter);
 app.use("/garden", gardenRouter);
 app.use("/minigames", minigameRouter);
+app.use("/players", playersRouter);
 
 app.post("/kill", async (_, res) => {
   try {
