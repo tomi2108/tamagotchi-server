@@ -10,11 +10,11 @@ GET http://{{host}}/inbox/tomi
 
 ###
 
-GET http://{{host}}/state
+GET http://{{host}}/inbox/rochi
 
 ###
 
-GET http://{{host}}/inbox/rochi
+GET http://{{host}}/state
 
 ###
 
@@ -34,7 +34,7 @@ POST http://{{host}}/inventory
 Content-Type: application/json
 
 {
-  "itemId" : 1,
+  "itemId": 1,
   "quantity": 1
 }
 
@@ -45,7 +45,7 @@ GET http://{{host}}/shop
 ###
 
 POST http://{{host}}/shop
-Content-type: application/json
+Content-Type: application/json
 
 {
   "itemId": 27
@@ -74,3 +74,14 @@ POST http://{{host}}/kill
 Content-Type: application/json
 
 ###
+
+GET http://{{host}}/missions
+
+###
+
+POST http://{{host}}/missions/complete
+Content-Type: application/json
+
+{
+  "missionId": 1
+}
