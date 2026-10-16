@@ -39,7 +39,7 @@ export class PetService {
 
       case "kill":
         this.scheduler.cancel("wakeup");
-        pet.kill();
+        pet.die();
         break;
 
       case "equip": {

@@ -88,6 +88,7 @@ export class PetRepository {
 
   async createInitial(name: string): Promise<Pet> {
     const state: PetState = {
+      dead_at: null,
       hunger_zero_since: null,
       hydration_zero_since: null,
       name,
