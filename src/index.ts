@@ -33,7 +33,7 @@ app.use("/wallet", walletRouter);
 app.use("/cemetery", cemeteryRouter);
 app.use("/missions", missionsRouter);
 app.use("/garden", gardenRouter);
-app.use("/minigame", minigameRouter);
+app.use("/minigames", minigameRouter);
 
 app.post("/kill", async (_, res) => {
   try {
