@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import { MissionTracker } from "../application/MissionTracker";
 import { PetService } from "../application/PetService";
 import { sql } from "../config/sql";
@@ -21,6 +22,7 @@ const petService = new PetService(inventory, scheduler, (action) => {
     console.error("Failed to execute scheduled action:", error);
   });
 });
+
 const statePublisher = new MqttStatePublisher();
 
 let pet: Pet | undefined;
@@ -129,6 +131,44 @@ export function adoptPet(name: string, species: PetSpecies): Promise<void> {
   queue = operation.catch((error: unknown) => {
     console.error("Failed to adopt pet:", error);
   });
+
+  return operation;
+}
+
+export function runActionTransaction<T>(
+  action: Action,
+  work: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const operation = queue.then(async () => {
+    await initialize();
+
+    if (!pet) throw new Error("No pet found. Adopt a pet first.");
+    if (pet.getState().is_dead) throw new Error("Pet is dead. Adopt a new pet.");
+    const client = await sql.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await work(client);
+      const events = await petService.execute(pet, client, action);
+      await petRepository.save(pet, client);
+      for (const event of events)
+        await missionTracker.trackEvent(event, client);
+      await client.query("COMMIT");
+      await statePublisher.publish(pet);
+      return result;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  });
+
+  queue = operation.then(
+    () => undefined,
+    (error: unknown) => {
+      console.error("Failed to execute queued transaction:", error);
+    },
+  );
 
   return operation;
 }

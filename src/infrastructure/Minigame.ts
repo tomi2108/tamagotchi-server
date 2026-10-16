@@ -1,5 +1,5 @@
 import { sql } from "../config/sql";
-import { PetRepository } from "./PetRepository";
+import { runActionTransaction } from "./Game";
 import { Wallet } from "./Wallet";
 
 interface Game {
@@ -18,10 +18,7 @@ interface GameScore {
 }
 
 export class Minigame {
-  private readonly petRepository = new PetRepository();
   private readonly wallet = new Wallet();
-
-  constructor() { }
 
   async getGames(): Promise<Game[]> {
     const result = await sql.query<Game>(
@@ -48,13 +45,12 @@ export class Minigame {
     }
 
     const coins = this.calculateReward(score);
-    const client = await sql.connect();
 
-    try {
-      await client.query("BEGIN");
-
-      const result = await client.query<GameScore>(
-        `INSERT INTO game_scores (
+    return runActionTransaction(
+      { type: "playMinigame", score },
+      async (client) => {
+        const result = await client.query<GameScore>(
+          `INSERT INTO game_scores (
            game_id,
            player_id,
            score
@@ -64,26 +60,23 @@ export class Minigame {
          WHERE code = $1
            AND is_active = TRUE
          RETURNING id, game_id, player_id, score, played_at`,
-        [gameCode, playerId, score],
-      );
+          [gameCode, playerId, score],
+        );
 
-      if (result.rowCount === 0) throw new Error("Game not found or inactive");
+        if (result.rowCount === 0) {
+          throw new Error("Game not found or inactive");
+        }
 
-      await this.petRepository.applyMinigameEffects(score, client);
-      if (coins > 0) await this.wallet.addCoins(coins, client);
+        if (coins > 0) {
+          await this.wallet.addCoins(coins, client);
+        }
 
-      await client.query("COMMIT");
-
-      return {
-        score: result.rows[0],
-        coins,
-      };
-    } catch (error) {
-      await client.query("ROLLBACK");
-      throw error;
-    } finally {
-      client.release();
-    }
+        return {
+          score: result.rows[0],
+          coins,
+        };
+      },
+    );
   }
 
   async getLeaderboard(gameCode: string): Promise<

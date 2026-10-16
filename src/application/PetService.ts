@@ -22,6 +22,10 @@ export class PetService {
     const previousState = pet.getState();
 
     switch (action.type) {
+      case "playMinigame": {
+        pet.playMinigame(action.score);
+        break;
+      }
       case "sleep": {
         const duration = pet.sleep();
 

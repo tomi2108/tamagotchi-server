@@ -54,35 +54,6 @@ export class PetRepository {
     );
   }
 
-  async applyMinigameEffects(score: number, client: PoolClient): Promise<void> {
-    const result = await client.query<PetRow>(
-      `SELECT *
-     FROM pet_state
-     WHERE is_dead = FALSE
-     LIMIT 1
-     FOR UPDATE`,
-    );
-
-    const row = result.rows[0];
-    if (!row) return;
-
-    const { id, ...state } = row;
-
-    const pet = new Pet(id, {
-      ...state,
-      hunger_zero_since: row.hunger_zero_since?.getTime() ?? null,
-      hydration_zero_since: row.hydration_zero_since?.getTime() ?? null,
-      equipment: {
-        head: null,
-        body: null,
-        accessory: null,
-      },
-    });
-
-    pet.playMinigame(score);
-    await this.save(pet, client);
-  }
-
   async getActive(): Promise<Pet | null> {
     const result = await sql.query<PetRow>("SELECT * FROM pet_state WHERE is_dead = false LIMIT 1");
     const row = result.rows[0];
