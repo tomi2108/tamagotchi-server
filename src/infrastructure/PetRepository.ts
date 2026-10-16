@@ -1,3 +1,4 @@
+import { PoolClient } from "pg";
 import { sql } from "../config/sql";
 import { Pet, type PetState, PetStatus } from "../domain/Pet";
 import { Inventory } from "./Inventory";
@@ -54,22 +55,23 @@ export class PetRepository {
     });
   }
 
-  async save(pet: Pet): Promise<void> {
+  async save(pet: Pet, client?: PoolClient): Promise<void> {
+    const db = client ?? sql;
     const state = pet.getState();
 
-    await sql.query(
+    await db.query(
       `UPDATE pet_state
-       SET energy = $1,
-           hunger = $2,
-           hydration = $3,
-           happiness = $4,
-           cleanliness = $5,
-           is_dead = $6,
-           dead_at = $7,
-           status = $8,
-           hunger_zero_since = $9,
-           hydration_zero_since = $10
-       WHERE id = $11`,
+     SET energy = $1,
+         hunger = $2,
+         hydration = $3,
+         happiness = $4,
+         cleanliness = $5,
+         is_dead = $6,
+         dead_at = $7,
+         status = $8,
+         hunger_zero_since = $9,
+         hydration_zero_since = $10
+     WHERE id = $11`,
       [
         state.energy,
         state.hunger,

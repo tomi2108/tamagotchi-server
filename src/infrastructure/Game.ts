@@ -1,4 +1,6 @@
+import { MissionTracker } from "../application/MissionTracker";
 import { PetService } from "../application/PetService";
+import { sql } from "../config/sql";
 import { Action } from "../domain/Actions";
 import { Pet } from "../domain/Pet";
 import { Inventory } from "./Inventory";
@@ -12,6 +14,8 @@ let interval: NodeJS.Timeout | undefined;
 const petRepository = new PetRepository();
 const inventory = new Inventory();
 const scheduler = new TimeoutActionScheduler();
+const missionTracker = new MissionTracker();
+
 const petService = new PetService(inventory, scheduler, (action) => {
   void dispatch(action).catch((error: unknown) => {
     console.error("Failed to execute scheduled action:", error);
@@ -74,9 +78,26 @@ export function dispatch(action: Action): Promise<void> {
     }
 
     const currentPet = pet;
+    const client = await sql.connect();
 
-    await petService.execute(currentPet, action);
-    await petRepository.save(currentPet);
+    try {
+      await client.query("BEGIN");
+
+      const events = await petService.execute(currentPet, client, action);
+      await petRepository.save(currentPet, client);
+
+      for (const event of events) {
+        await missionTracker.trackEvent(event, client);
+      }
+
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+
     await statePublisher.publish(currentPet);
   });
 

@@ -13,14 +13,15 @@ export class Wallet {
     return result.rows[0].coins;
   }
 
-  async addCoins(amount: number): Promise<number> {
+  async addCoins(amount: number, client?: PoolClient): Promise<number> {
     this.validateAmount(amount);
 
-    const result = await sql.query(
+    const db = client ?? sql;
+    const result = await db.query(
       `UPDATE wallet
-       SET coins = coins + $1
-       WHERE id = 1
-       RETURNING coins`,
+     SET coins = coins + $1
+     WHERE id = 1
+     RETURNING coins`,
       [amount],
     );
 
