@@ -1,14 +1,14 @@
 import { PoolClient } from "pg";
 import { sql } from "../config/sql";
-import { EquipmentSlot, EquippableItem, Item } from "./Item";
+import { EquipmentSlot, EquippableItem } from "./Item";
 
 export class Inventory {
   async getItem(itemId: number) {
     const result = await sql.query(
-      `SELECT i.id, i.name, i.type, i.slot, inv.quantity
-     FROM items i
-     JOIN pet_inventory inv ON inv.item_id = i.id
-     WHERE i.id = $1`,
+      `SELECT i.id, i.code, i.name, i.type, i.slot, inv.quantity
+       FROM items i
+       JOIN pet_inventory inv ON inv.item_id = i.id
+       WHERE i.id = $1`,
       [itemId],
     );
 
@@ -17,17 +17,19 @@ export class Inventory {
 
   async getInventory() {
     const result = await sql.query(
-      `SELECT i.id, i.name, i.type, i.slot, inv.quantity
-     FROM pet_inventory inv
-     JOIN items i ON i.id = inv.item_id
-     ORDER BY i.name`,
+      `SELECT i.id, i.code, i.name, i.type, i.slot, inv.quantity
+       FROM pet_inventory inv
+       JOIN items i ON i.id = inv.item_id
+       ORDER BY i.name`,
     );
+
     return result.rows;
   }
 
   async removeItem(itemId: number, client: PoolClient, quantity = 1): Promise<void> {
-    if (!Number.isInteger(quantity) || quantity < 1)
+    if (!Number.isInteger(quantity) || quantity < 1) {
       throw new Error("Quantity must be a positive integer");
+    }
 
     const result = await client.query(
       `UPDATE pet_inventory
@@ -38,8 +40,9 @@ export class Inventory {
       [itemId, quantity],
     );
 
-    if (result.rowCount === 0)
+    if (result.rowCount === 0) {
       throw new Error("Item not found in inventory or insufficient quantity");
+    }
 
     if (result.rows[0].quantity === 0) {
       await client.query(
@@ -52,13 +55,14 @@ export class Inventory {
 
   async getEquipped(): Promise<EquippableItem[]> {
     const result = await sql.query(
-      `SELECT e.slot, i.id, i.name
+      `SELECT e.slot, i.id, i.code, i.name, i.type, i.price, i.rarity
        FROM pet_equipment e
        JOIN items i ON i.id = e.item_id`,
     );
 
     return result.rows;
   }
+
   async addItem(itemId: number, quantity = 1, client?: PoolClient): Promise<void> {
     if (!Number.isInteger(quantity) || quantity < 1) {
       throw new Error("Quantity must be a positive integer");
@@ -68,27 +72,29 @@ export class Inventory {
 
     await db.query(
       `INSERT INTO pet_inventory (item_id, quantity)
-     VALUES ($1, $2)
-     ON CONFLICT (item_id)
-     DO UPDATE SET quantity =
-       pet_inventory.quantity + EXCLUDED.quantity`,
+       VALUES ($1, $2)
+       ON CONFLICT (item_id)
+       DO UPDATE SET quantity =
+         pet_inventory.quantity + EXCLUDED.quantity`,
       [itemId, quantity],
     );
   }
 
   async equip(itemId: number, client: PoolClient): Promise<EquippableItem> {
     const itemResult = await client.query(
-      `SELECT i.id, i.name, i.slot
-         FROM items i
-         JOIN pet_inventory inv ON inv.item_id = i.id
-         WHERE i.id = $1
-           AND i.type = 'equippable'
-           AND inv.quantity > 0`,
+      `SELECT i.id, i.code, i.name, i.type, i.slot, i.price, i.rarity
+       FROM items i
+       JOIN pet_inventory inv ON inv.item_id = i.id
+       WHERE i.id = $1
+         AND i.type = 'equippable'
+         AND inv.quantity > 0`,
       [itemId],
     );
 
     const item = itemResult.rows[0];
-    if (!item) throw new Error("Equippable item not found in inventory");
+    if (!item) {
+      throw new Error("Equippable item not found in inventory");
+    }
 
     const previousResult = await client.query(
       `DELETE FROM pet_equipment

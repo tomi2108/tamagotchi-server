@@ -2,12 +2,13 @@ import { PetState } from "../domain/Pet";
 
 export type EquipmentSlot = "head" | "body" | "accessory";
 
-export type ItemType = "food" | "medicine" | "equippable";
+export type ItemType = "consumable" | "seed" | "equippable";
 
 export type ItemRarity = "common" | "uncommon" | "rare" | "legendary";
 
 export type Item = {
   id: number;
+  code: string;
   name: string;
   type: ItemType;
   slot: EquipmentSlot | null;
@@ -20,8 +21,15 @@ export type EquippableItem = Item & {
   slot: EquipmentSlot;
 };
 
-export type ConsumableItem = Omit<Item, "slot"> & {
-  type: Exclude<ItemType, "equippable">;
+export type ConsumableItem = Item & {
+  type: "consumable";
+  slot: null;
+  quantity: number;
+};
+
+export type SeedItem = Item & {
+  type: "seed";
+  slot: null;
   quantity: number;
 };
 
@@ -40,7 +48,6 @@ export const itemEffects: Record<string, ItemEffects> = {
   Caramelo: { hunger: 3, happiness: 8 },
   Sandwich: { hunger: 25, energy: 5 },
 
-  // Medicina
   "Poción de energía": { energy: 30, hydration: -5 },
   "Poción curativa": { energy: 15, happiness: 5 },
   Remedio: { energy: 10, happiness: -3 },

@@ -104,17 +104,8 @@ export class PetService {
         await this.inventory.removeItem(action.itemId, client);
         pet.applyEffects(effects);
 
-        events.push({
-          type: "item_used",
-          itemId: action.itemId,
-        });
-
-        if (item.type === "food") {
-          events.push({
-            type: "pet_fed",
-            itemId: action.itemId,
-          });
-        }
+        events.push({ type: "item_used", itemId: action.itemId });
+        if (item.type === "consumable") events.push({ type: "pet_fed", itemId: action.itemId });
 
         break;
       }

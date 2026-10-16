@@ -44,9 +44,19 @@ export class Missions {
         [TIME_ZONE],
       );
 
+      const { rows: resetRows } = await client.query(
+        `SELECT (
+     (
+       (NOW() AT TIME ZONE $1)::date + 1
+     )::timestamp AT TIME ZONE $1
+   ) AS next_reset_at`,
+        [TIME_ZONE],
+      );
+      const nextResetAt = resetRows[0].next_reset_at;
+
       await client.query("COMMIT");
 
-      return rows;
+      return { missions: rows, nextResetAt };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

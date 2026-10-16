@@ -7,7 +7,7 @@ export class ItemRepository {
     const db = client ?? sql;
 
     const result = await db.query(
-      `SELECT id, name, type, slot, price, rarity
+      `SELECT id, code, name, type, slot, price, rarity
        FROM items
        ORDER BY name`,
     );
@@ -17,7 +17,7 @@ export class ItemRepository {
 
   async getItem(itemId: number): Promise<Item | null> {
     const result = await sql.query(
-      `SELECT id, name, type, slot, price, rarity
+      `SELECT id, code, name, type, slot, price, rarity
        FROM items
        WHERE id = $1`,
       [itemId],

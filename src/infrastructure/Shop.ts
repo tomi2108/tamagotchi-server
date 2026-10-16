@@ -15,6 +15,12 @@ const rarityWeights: Record<ItemRarity, number> = {
   legendary: 2,
 };
 
+const typeMultiplier: Record<Item["type"], number> = {
+  consumable: 1,
+  seed: 0.6,
+  equippable: 0.35,
+};
+
 const rarityStock: Record<ItemRarity, number> = {
   common: 8,
   uncommon: 5,
@@ -77,12 +83,12 @@ export class Shop {
       const rotation = await this.ensureCurrentRotation(client);
 
       const result = await client.query(
-        `SELECT i.id, i.name, i.type, i.slot, i.price, i.rarity,
-              si.stock
-       FROM shop_items si
-       JOIN items i ON i.id = si.item_id
-       WHERE si.rotation_id = $1 AND si.item_id = $2
-       FOR UPDATE OF si`,
+        `SELECT i.id, i.code, i.name, i.type, i.slot, i.price, i.rarity,
+       si.stock
+FROM shop_items si
+JOIN items i ON i.id = si.item_id
+WHERE si.rotation_id = $1 AND si.item_id = $2
+FOR UPDATE OF si`,
         [rotation.id, itemId],
       );
 
@@ -194,12 +200,12 @@ export class Shop {
 
   private async getRotationItems(client: PoolClient, rotationId: number): Promise<ShopItem[]> {
     const result = await client.query(
-      `SELECT i.id, i.name, i.type, i.slot, i.price, i.rarity,
-              si.stock
-       FROM shop_items si
-       JOIN items i ON i.id = si.item_id
-       WHERE si.rotation_id = $1
-       ORDER BY i.name`,
+      `SELECT i.id, i.code, i.name, i.type, i.slot, i.price, i.rarity,
+       si.stock
+FROM shop_items si
+JOIN items i ON i.id = si.item_id
+WHERE si.rotation_id = $1
+ORDER BY i.name`,
       [rotationId],
     );
 
@@ -211,11 +217,9 @@ export class Shop {
     const selected: T[] = [];
 
     while (selected.length < SHOP_SIZE) {
-      const weights = remaining.map((item) => {
-        const equipmentMultiplier = item.type === "equippable" ? 0.35 : 1;
-
-        return rarityWeights[item.rarity] * equipmentMultiplier;
-      });
+      const weights = remaining.map(
+        (item) => rarityWeights[item.rarity] * typeMultiplier[item.type],
+      );
 
       const totalWeight = weights.reduce((total, weight) => total + weight, 0);
 
