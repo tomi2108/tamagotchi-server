@@ -7,7 +7,7 @@ const repository = new PetRepository();
 cemeteryRouter.get("/", async (_req, res) => {
   try {
     const cemetery = await repository.getDead();
-    return res.status(200).json(cemetery);
+    return res.status(200).json(cemetery.map((p) => p.getState()));
   } catch (err) {
     console.error(err);
     return res.status(500).end();
