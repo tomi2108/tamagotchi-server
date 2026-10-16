@@ -21,7 +21,6 @@ export class PetService {
           this.scheduler.schedule("wakeup", duration, () => {
             this.dispatchAction({ type: "wakeup" });
           });
-
         break;
       }
 

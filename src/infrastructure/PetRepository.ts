@@ -9,13 +9,29 @@ type PetRow = Omit<PetState, "hunger_zero_since" | "hydration_zero_since"> & {
 };
 
 export class PetRepository {
+  async getDead(): Promise<Pet[]> {
+    const result = await sql.query<PetRow>(
+      `SELECT *
+   FROM pet_state
+   WHERE is_dead = TRUE
+   ORDER BY dead_at DESC NULLS LAST`,
+    );
+    const rows = result.rows;
+    return rows.map(
+      ({ id, ...state }) =>
+        new Pet(id, {
+          ...state,
+          hunger_zero_since: state.hunger_zero_since?.getTime() ?? null,
+          hydration_zero_since: state.hydration_zero_since?.getTime() ?? null,
+        }),
+    );
+  }
+
   async getActive(): Promise<Pet | null> {
     const result = await sql.query<PetRow>("SELECT * FROM pet_state WHERE is_dead = false LIMIT 1");
-
     const row = result.rows[0];
 
     if (!row) return null;
-
     const inventory = new Inventory();
     const equippedItems = await inventory.getEquipped();
 
@@ -49,10 +65,11 @@ export class PetRepository {
            happiness = $4,
            cleanliness = $5,
            is_dead = $6,
-           status = $7,
-           hunger_zero_since = $8,
-           hydration_zero_since = $9
-       WHERE id = $10`,
+           dead_at = $7,
+           status = $8,
+           hunger_zero_since = $9,
+           hydration_zero_since = $10
+       WHERE id = $11`,
       [
         state.energy,
         state.hunger,
@@ -60,6 +77,7 @@ export class PetRepository {
         state.happiness,
         state.cleanliness,
         state.is_dead,
+        state.dead_at,
         state.status,
         state.hunger_zero_since === null ? null : new Date(state.hunger_zero_since),
         state.hydration_zero_since === null ? null : new Date(state.hydration_zero_since),

@@ -66,6 +66,10 @@ GET http://{{host}}/wallet
 
 ###
 
+GET http://{{host}}/cemetery
+
+###
+
 POST http://{{host}}/kill
 Content-Type: application/json
 

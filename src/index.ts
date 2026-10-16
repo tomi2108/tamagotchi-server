@@ -10,6 +10,7 @@ import { shopRouter } from "./routes/shop";
 import { adoptRouter } from "./routes/adopt";
 import { stateRouter } from "./routes/state";
 import { walletRouter } from "./routes/wallet";
+import { cemeteryRouter } from "./routes/cemetery";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -26,6 +27,7 @@ app.use("/shop", shopRouter);
 app.use("/adopt", adoptRouter);
 app.use("/state", stateRouter);
 app.use("/wallet", walletRouter);
+app.use("/cemetery", cemeteryRouter);
 
 app.post("/kill", async (_, res) => {
   try {

@@ -20,6 +20,7 @@ export type PetState = {
   status: PetStatus;
   hunger_zero_since: number | null;
   hydration_zero_since: number | null;
+  dead_at: Date | null;
   equipment: EquippedItems;
 };
 
@@ -37,8 +38,10 @@ export class Pet {
     return { ...this.state };
   }
 
-  kill() {
+  die() {
+    if (this.state.is_dead) return;
     this.state.is_dead = true;
+    this.state.dead_at = new Date();
   }
 
   sleep(): number | undefined {
@@ -114,6 +117,6 @@ export class Pet {
       this.state.hydration_zero_since !== null &&
       now - this.state.hydration_zero_since >= neglectLimit;
 
-    if (hungerNeglected || hydrationNeglected) this.state.is_dead = true;
+    if (hungerNeglected || hydrationNeglected) this.die();
   }
 }
