@@ -2,7 +2,7 @@ import { Action } from "../domain/Actions";
 import { Pet } from "../domain/Pet";
 import { ActionScheduler } from "./ActionScheduler";
 import { Inventory } from "../infrastructure/Inventory";
-import { itemEffects } from "../infrastructure/Item";
+import { getItemEffects, itemEffects } from "../infrastructure/Item";
 import { MissionEvent } from "./MissionTracker";
 import { PoolClient } from "pg";
 
@@ -102,7 +102,7 @@ export class PetService {
         const item = await this.inventory.getItem(action.itemId);
         if (!item || item.type === "equippable") return events;
 
-        const effects = itemEffects[item.name];
+        const effects = getItemEffects(item.code)
         if (!effects || !pet.canApplyEffects()) return events;
 
         await this.inventory.removeItem(action.itemId, client);

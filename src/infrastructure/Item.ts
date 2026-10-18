@@ -38,19 +38,27 @@ export type ItemEffects = Partial<
 >;
 
 export const itemEffects: Record<string, ItemEffects> = {
-  Frutilla: { hunger: 8, happiness: 3 },
-  Manzana: { hunger: 12, hydration: 2 },
-  Banana: { hunger: 10, energy: 3 },
-  Galletita: { hunger: 6, happiness: 4 },
-  Zanahoria: { hunger: 8, cleanliness: 1 },
-  Pescado: { hunger: 20, happiness: 2 },
-  Torta: { hunger: 18, happiness: 10 },
-  Caramelo: { hunger: 3, happiness: 8 },
-  Sandwich: { hunger: 25, energy: 5 },
+  strawberry: { hunger: 8, happiness: 3 },
+  apple: { hunger: 12, hydration: 2 },
+  banana: { hunger: 10, energy: 3 },
+  cookie: { hunger: 6, happiness: 4 },
+  carrot: { hunger: 8, cleanliness: 1 },
+  fish: { hunger: 20, happiness: 2 },
+  cake: { hunger: 18, happiness: 10 },
+  candy: { hunger: 3, happiness: 8 },
+  sandwich: { hunger: 25, energy: 5 },
 
-  "Poción de energía": { energy: 30, hydration: -5 },
-  "Poción curativa": { energy: 15, happiness: 5 },
-  Remedio: { energy: 10, happiness: -3 },
-  Vitamina: { energy: 15, hunger: 5 },
-  Jarabe: { energy: 8, happiness: -2 },
+  energy_potion: { energy: 30, hydration: -5 },
+  healing_potion: { energy: 15, happiness: 5 },
+  medicine: { energy: 10, happiness: -3 },
+  vitamin: { energy: 15, hunger: 5 },
+  syrup: { energy: 8, happiness: -2 },
+
+  tomato: { hunger: 8, hydration: 2 },
+  lettuce: { hunger: 5, hydration: 5 },
+  pumpkin: { hunger: 15, happiness: 3 },
 };
+
+export function getItemEffects(code: string): ItemEffects | undefined {
+  return itemEffects[code];
+}
