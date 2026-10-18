@@ -6,11 +6,31 @@ GET http://{{host}}/
 
 ###
 
-GET http://{{host}}/inbox/tomi
+GET http://{{host}}/inbox/1
 
 ###
 
-GET http://{{host}}/inbox/rochi
+GET http://{{host}}/inbox/2
+
+###
+
+POST http://{{host}}/message
+Content-Type: application/json
+
+{
+  "senderId": 1,
+  "recipientId": 2,
+  "content": "Hello!"
+}
+
+###
+
+PATCH http://{{host}}/message/1/read
+Content-Type: application/json
+
+{
+  "recipientId": 2
+}
 
 ###
 
