@@ -47,7 +47,7 @@ export class Inbox {
          created_at
        FROM messages
        WHERE recipient_id = $1
-       ORDER BY created_at ASC`,
+       ORDER BY created_at DESC`,
       [recipientId],
     );
 
