@@ -119,14 +119,15 @@ export class Pet {
 
   tick(now = Date.now()) {
     if (this.state.is_dead) return;
+    const dt = 1 / 30;
 
-    this.state.hunger = Math.max(0, this.state.hunger - 1 / 1800);
-    this.state.hydration = Math.max(0, this.state.hydration - 2 / 3600);
-    this.state.happiness = Math.max(0, this.state.happiness - 1 / 3600);
+    this.state.hunger = Math.max(0, this.state.hunger - dt);
+    this.state.hydration = Math.max(0, this.state.hydration - dt);
+    this.state.happiness = Math.max(0, this.state.happiness - dt / 2);
 
     if (this.state.status === PetStatus.sleeping)
-      this.state.energy = Math.min(100, this.state.energy + 2 / 3600);
-    else this.state.energy = Math.max(0, this.state.energy - 1 / 3600);
+      this.state.energy = Math.min(100, this.state.energy + 30 * dt);
+    else this.state.energy = Math.max(0, this.state.energy - dt / 2);
 
     if (this.state.hunger <= 0) this.state.hunger_zero_since ??= now;
     else this.state.hunger_zero_since = null;
@@ -134,14 +135,11 @@ export class Pet {
     else this.state.hydration_zero_since = null;
 
     const neglectLimit = 6 * 60 * 60 * 1000;
-
     const hungerNeglected =
       this.state.hunger_zero_since !== null && now - this.state.hunger_zero_since >= neglectLimit;
-
     const hydrationNeglected =
       this.state.hydration_zero_since !== null &&
       now - this.state.hydration_zero_since >= neglectLimit;
-
     if (hungerNeglected || hydrationNeglected) this.die();
   }
 }

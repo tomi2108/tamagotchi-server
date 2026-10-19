@@ -9,7 +9,7 @@ import { MqttStatePublisher } from "./MqttStatePublisher";
 import { PetRepository } from "./PetRepository";
 import { TimeoutActionScheduler } from "./TimeoutActionScheduler";
 
-const TICK_INTERVAL = 1000;
+const TICK_INTERVAL = 60 * 1000;
 let interval: NodeJS.Timeout | undefined;
 
 const petRepository = new PetRepository();
@@ -150,8 +150,7 @@ export function runActionTransaction<T>(
       const result = await work(client);
       const events = await petService.execute(pet, client, action);
       await petRepository.save(pet, client);
-      for (const event of events)
-        await missionTracker.trackEvent(event, client);
+      for (const event of events) await missionTracker.trackEvent(event, client);
       await client.query("COMMIT");
       await statePublisher.publish(pet);
       return result;
