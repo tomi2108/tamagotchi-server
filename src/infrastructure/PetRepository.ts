@@ -2,6 +2,12 @@ import { PoolClient } from "pg";
 import { sql } from "../config/sql";
 import { Pet, type PetState, PetStatus, PetSpecies } from "../domain/Pet";
 import { Inventory } from "./Inventory";
+import { createStatusEffect, StatusEffect } from "../domain/StatusEffect";
+
+type StatusEffectRow = {
+  type: string;
+  expires_at: Date;
+};
 
 type PetRow = Omit<PetState, "hunger_zero_since" | "hydration_zero_since"> & {
   id: number;
@@ -10,6 +16,21 @@ type PetRow = Omit<PetState, "hunger_zero_since" | "hydration_zero_since"> & {
 };
 
 export class PetRepository {
+  private async getEffects(petId: number): Promise<StatusEffect[]> {
+    const result = await sql.query<StatusEffectRow>(
+      `SELECT type, expires_at
+     FROM pet_status_effect
+     WHERE pet_id = $1
+       AND expires_at > NOW()`,
+      [petId],
+    );
+
+    return result.rows.flatMap((row) => {
+      const effect = createStatusEffect(row.type, row.expires_at.getTime());
+      return effect ? [effect] : [];
+    });
+  }
+
   async getLastDead(): Promise<Pet | null> {
     const result = await sql.query<PetRow>(
       `SELECT *
@@ -68,17 +89,20 @@ export class PetRepository {
       accessory: null,
     };
 
-    for (const item of equippedItems) {
-      equipment[item.slot] = item;
-    }
-
+    for (const item of equippedItems) equipment[item.slot] = item;
     const { id, ...state } = row;
-    return new Pet(id, {
-      ...state,
-      hunger_zero_since: row.hunger_zero_since?.getTime() ?? null,
-      hydration_zero_since: row.hydration_zero_since?.getTime() ?? null,
-      equipment,
-    });
+    const effects = await this.getEffects(id);
+
+    return new Pet(
+      id,
+      {
+        ...state,
+        hunger_zero_since: row.hunger_zero_since?.getTime() ?? null,
+        hydration_zero_since: row.hydration_zero_since?.getTime() ?? null,
+        equipment,
+      },
+      effects,
+    );
   }
 
   async save(pet: Pet, client?: PoolClient): Promise<void> {
@@ -112,6 +136,16 @@ export class PetRepository {
         pet.getId(),
       ],
     );
+
+    const effects = pet.getEffects();
+    await db.query(`DELETE FROM pet_status_effect WHERE pet_id = $1`, [pet.getId()]);
+    for (const effect of effects) {
+      await db.query(
+        `INSERT INTO pet_status_effect (pet_id, type, expires_at)
+     VALUES ($1, $2, $3)`,
+        [pet.getId(), effect.type, new Date(effect.expiresAt)],
+      );
+    }
   }
 
   async createInitial(name: string, species: PetSpecies): Promise<Pet> {
