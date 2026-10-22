@@ -3,7 +3,12 @@ import cors from "cors";
 import { inboxRoutes } from "./routes/inbox";
 import { messageRoutes } from "./routes/message";
 import { subscribeToState } from "./state";
-import { dispatch, forceUpdate, initializeGame, startGameLoop } from "./infrastructure/Game";
+import {
+  dispatch,
+  forceUpdate,
+  initializeGame,
+  startGameLoop,
+} from "./infrastructure/Game";
 import { inventoryRouter } from "./routes/inventory";
 import { itemsRouter } from "./routes/items";
 import { shopRouter } from "./routes/shop";
@@ -45,7 +50,8 @@ app.post("/kill", async (_, res) => {
     res.sendStatus(204);
   } catch (error) {
     res.status(500).json({
-      error: error instanceof Error ? error.message : "Error al matar a la mascota",
+      error:
+        error instanceof Error ? error.message : "Error al matar a la mascota",
     });
   }
 });

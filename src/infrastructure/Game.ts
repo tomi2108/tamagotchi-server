@@ -33,9 +33,7 @@ export function forceUpdate(): Promise<Pet | undefined> {
   const operation = queue.then(async () => {
     const loadedPet = await petRepository.getActive();
     pet = loadedPet ?? undefined;
-    if (pet) {
-      await statePublisher.publish(pet);
-    }
+    if (pet) await statePublisher.publish(pet);
     return pet;
   });
   queue = operation.then(
@@ -114,7 +112,8 @@ export function adoptPet(name: string, species: PetSpecies): Promise<void> {
   const operation = queue.then(async () => {
     await initialize();
 
-    if (pet && !pet.getState().is_dead) throw new Error("An active pet already exists.");
+    if (pet && !pet.getState().is_dead)
+      throw new Error("An active pet already exists.");
 
     const normalizedName = name.trim();
 
@@ -143,14 +142,16 @@ export function runActionTransaction<T>(
     await initialize();
 
     if (!pet) throw new Error("No pet found. Adopt a pet first.");
-    if (pet.getState().is_dead) throw new Error("Pet is dead. Adopt a new pet.");
+    if (pet.getState().is_dead)
+      throw new Error("Pet is dead. Adopt a new pet.");
     const client = await sql.connect();
     try {
       await client.query("BEGIN");
       const result = await work(client);
       const events = await petService.execute(pet, client, action);
       await petRepository.save(pet, client);
-      for (const event of events) await missionTracker.trackEvent(event, client);
+      for (const event of events)
+        await missionTracker.trackEvent(event, client);
       await client.query("COMMIT");
       await statePublisher.publish(pet);
       return result;
@@ -176,7 +177,7 @@ export function startGameLoop(): void {
   if (interval) return;
 
   interval = setInterval(() => {
-    void dispatch({ type: "tick" }).catch(() => { });
+    void dispatch({ type: "tick" }).catch(() => {});
   }, TICK_INTERVAL);
 }
 
