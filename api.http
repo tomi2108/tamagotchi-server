@@ -38,6 +38,10 @@ GET http://{{host}}/state
 
 ###
 
+GET http://{{host}}/state/dead
+
+###
+
 GET http://{{host}}/updateState/force
 
 ###
