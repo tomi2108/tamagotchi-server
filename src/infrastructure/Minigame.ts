@@ -107,6 +107,6 @@ export class Minigame {
   }
 
   private calculateReward(score: number): number {
-    return Math.min(50, Math.floor(Math.sqrt(score) / 2));
+    return Math.min(100, Math.floor(Math.sqrt(score) * 3.2));
   }
 }
