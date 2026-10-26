@@ -210,7 +210,7 @@ export class Pet {
 
     this.removeExpiredEffects(now);
 
-    const dt = 1 / 30;
+    const dt = 1 / 15;
     const modifiers = this.getTickModifiers(now);
 
     this.state.hunger = Math.max(0, this.state.hunger - dt * modifiers.hungerDecay);
