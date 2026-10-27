@@ -8,7 +8,15 @@ export type PetTickModifiers = {
 
 export abstract class StatusEffect {
   abstract readonly type: string;
-  constructor(public readonly expiresAt: number) { }
+
+  constructor(public readonly expiresAt: number) {
+    if (
+      !Number.isFinite(expiresAt) ||
+      Number.isNaN(new Date(expiresAt).getTime())
+    ) {
+      throw new Error(`Invalid expiresAt for ${new.target.name}: ${expiresAt}`);
+    }
+  }
 
   isActive(now = Date.now()): boolean {
     return now < this.expiresAt;

@@ -2,14 +2,10 @@ import { PoolClient } from "pg";
 import { Action } from "../domain/Actions";
 import { Pet } from "../domain/Pet";
 import {
-  FoodPoisoningEffect,
-  GluttonyEffect,
-  HappyEffect,
   HydratedEffect,
   InsomniaEffect,
   NightmaresEffect,
   RestedEffect,
-  StomachBugEffect,
   WellFedEffect,
 } from "../domain/StatusEffect";
 import { ActionScheduler } from "./ActionScheduler";
@@ -28,9 +24,13 @@ export class PetService {
     private inventory: Inventory,
     private scheduler: ActionScheduler,
     private dispatchAction: DispatchAction,
-  ) { }
+  ) {}
 
-  async execute(pet: Pet, client: PoolClient, action: Action): Promise<MissionEvent[]> {
+  async execute(
+    pet: Pet,
+    client: PoolClient,
+    action: Action,
+  ): Promise<MissionEvent[]> {
     const events: MissionEvent[] = [];
     const previousState = pet.getState();
     const now = Date.now();
@@ -45,8 +45,10 @@ export class PetService {
         const duration = pet.sleep();
         if (duration !== undefined) {
           this.sleepStartedAt = now;
-          if (Math.random() < 0.1) pet.addEffect(new InsomniaEffect(now + duration), now);
-          if (Math.random() < 0.05) pet.addEffect(new NightmaresEffect(now + duration), now);
+          if (Math.random() < 0.1)
+            pet.addEffect(new InsomniaEffect(now + duration), now);
+          if (Math.random() < 0.05)
+            pet.addEffect(new NightmaresEffect(now + duration), now);
           this.scheduler.schedule("wakeup", duration, () =>
             this.dispatchAction({ type: "wakeup" }),
           );
@@ -132,10 +134,12 @@ export class PetService {
 
         pet.applyEffects(effects);
 
-        if (item.type === "consumable") pet.addEffect(new WellFedEffect(now + 10 * MINUTE), now);
+        if (item.type === "consumable")
+          pet.addEffect(new WellFedEffect(now + 10 * MINUTE), now);
 
         events.push({ type: "item_used", itemId: action.itemId });
-        if (item.type === "consumable") events.push({ type: "pet_fed", itemId: action.itemId });
+        if (item.type === "consumable")
+          events.push({ type: "pet_fed", itemId: action.itemId });
         break;
       }
     }

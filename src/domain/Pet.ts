@@ -97,20 +97,26 @@ export class Pet {
       energyDecay: 1,
       energyRecovery: 1,
     };
-    for (const effect of this.effects) if (effect.isActive(now)) effect.apply(modifiers);
+    for (const effect of this.effects)
+      if (effect.isActive(now)) effect.apply(modifiers);
     return modifiers;
   }
 
   private updateThresholdEffects(now: number): void {
-    if (this.state.hunger < 20) this.addEffect(new HungryEffect(now + 5 * MINUTE), now);
+    if (this.state.hunger < 20)
+      this.addEffect(new HungryEffect(now + 5 * MINUTE), now);
     else this.removeEffect("hungry");
-    if (this.state.hydration < 20) this.addEffect(new DehydratedEffect(now + 5 * MINUTE), now);
+    if (this.state.hydration < 20)
+      this.addEffect(new DehydratedEffect(now + 5 * MINUTE), now);
     else this.removeEffect("dehydrated");
-    if (this.state.happiness < 20) this.addEffect(new UnhappyEffect(now + 5 * MINUTE), now);
+    if (this.state.happiness < 20)
+      this.addEffect(new UnhappyEffect(now + 5 * MINUTE), now);
     else this.removeEffect("unhappy");
-    if (this.state.cleanliness < 20) this.addEffect(new DirtyEffect(now + 10 * MINUTE), now);
+    if (this.state.cleanliness < 20)
+      this.addEffect(new DirtyEffect(now + 10 * MINUTE), now);
     else this.removeEffect("dirty");
-    if (this.state.energy < 20) this.addEffect(new ExhaustedEffect(now + 3 * MINUTE), now);
+    if (this.state.energy < 20)
+      this.addEffect(new ExhaustedEffect(now + 3 * MINUTE), now);
     else this.removeEffect("exhausted");
   }
 
@@ -118,7 +124,10 @@ export class Pet {
     if (this.state.cleanliness < 10) {
       this.cleanlinessLowSince ??= now;
       if (now - this.cleanlinessLowSince >= 60 * MINUTE)
-        this.addEffect(new FleasEffect(Number.MAX_SAFE_INTEGER), now);
+        this.addEffect(
+          new FleasEffect(now + 100 * 365 * 24 * 60 * MINUTE),
+          now,
+        );
     } else {
       this.cleanlinessLowSince = null;
       this.removeEffect("fleas");
@@ -139,7 +148,8 @@ export class Pet {
 
     const duration = 5 * MINUTE;
 
-    if (Math.random() < 0.7) this.addEffect(new CommonColdEffect(now + 10 * MINUTE), now);
+    if (Math.random() < 0.7)
+      this.addEffect(new CommonColdEffect(now + 10 * MINUTE), now);
     else this.addEffect(new FeverEffect(now + duration), now);
   }
 
@@ -151,18 +161,23 @@ export class Pet {
   }
 
   sleep(): number | undefined {
-    if (this.state.is_dead || this.state.status === PetStatus.sleeping) return undefined;
+    if (this.state.is_dead || this.state.status === PetStatus.sleeping)
+      return undefined;
     this.state.status = PetStatus.sleeping;
     const minMinutes = 2;
     const maxMinutes = 15;
-    const minutes = Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
+    const minutes =
+      Math.floor(Math.random() * (maxMinutes - minMinutes + 1)) + minMinutes;
 
     return minutes * MINUTE;
   }
 
   playMinigame(score: number): void {
     if (this.state.is_dead) return;
-    const impact = Math.min(15, Math.max(1, Math.floor(Math.log2(score + 1) * 1.5)));
+    const impact = Math.min(
+      15,
+      Math.max(1, Math.floor(Math.log2(score + 1) * 1.5)),
+    );
     this.state.cleanliness = Math.max(0, this.state.cleanliness - impact);
     this.state.energy = Math.max(0, this.state.energy - impact);
     this.state.happiness = Math.min(100, this.state.happiness + impact);
@@ -213,13 +228,29 @@ export class Pet {
     const dt = 1 / 15;
     const modifiers = this.getTickModifiers(now);
 
-    this.state.hunger = Math.max(0, this.state.hunger - dt * modifiers.hungerDecay);
-    this.state.hydration = Math.max(0, this.state.hydration - dt * modifiers.hydrationDecay);
-    this.state.happiness = Math.max(0, this.state.happiness - (dt / 2) * modifiers.happinessDecay);
+    this.state.hunger = Math.max(
+      0,
+      this.state.hunger - dt * modifiers.hungerDecay,
+    );
+    this.state.hydration = Math.max(
+      0,
+      this.state.hydration - dt * modifiers.hydrationDecay,
+    );
+    this.state.happiness = Math.max(
+      0,
+      this.state.happiness - (dt / 2) * modifiers.happinessDecay,
+    );
 
     if (this.state.status === PetStatus.sleeping)
-      this.state.energy = Math.min(100, this.state.energy + 30 * dt * modifiers.energyRecovery);
-    else this.state.energy = Math.max(0, this.state.energy - (dt / 2) * modifiers.energyDecay);
+      this.state.energy = Math.min(
+        100,
+        this.state.energy + 30 * dt * modifiers.energyRecovery,
+      );
+    else
+      this.state.energy = Math.max(
+        0,
+        this.state.energy - (dt / 2) * modifiers.energyDecay,
+      );
 
     if (this.state.hunger <= 0) this.state.hunger_zero_since ??= now;
     else this.state.hunger_zero_since = null;
@@ -232,7 +263,8 @@ export class Pet {
     this.tryRandomIllness(now);
     const neglectLimit = 6 * 60 * MINUTE;
     const hungerNeglected =
-      this.state.hunger_zero_since !== null && now - this.state.hunger_zero_since >= neglectLimit;
+      this.state.hunger_zero_since !== null &&
+      now - this.state.hunger_zero_since >= neglectLimit;
     const hydrationNeglected =
       this.state.hydration_zero_since !== null &&
       now - this.state.hydration_zero_since >= neglectLimit;

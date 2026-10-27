@@ -76,7 +76,9 @@ export class PetRepository {
   }
 
   async getActive(): Promise<Pet | null> {
-    const result = await sql.query<PetRow>("SELECT * FROM pet_state WHERE is_dead = false LIMIT 1");
+    const result = await sql.query<PetRow>(
+      "SELECT * FROM pet_state WHERE is_dead = false LIMIT 1",
+    );
     const row = result.rows[0];
 
     if (!row) return null;
@@ -131,19 +133,43 @@ export class PetRepository {
         state.is_dead,
         state.dead_at,
         state.status,
-        state.hunger_zero_since === null ? null : new Date(state.hunger_zero_since),
-        state.hydration_zero_since === null ? null : new Date(state.hydration_zero_since),
+        state.hunger_zero_since === null
+          ? null
+          : new Date(state.hunger_zero_since),
+        state.hydration_zero_since === null
+          ? null
+          : new Date(state.hydration_zero_since),
         pet.getId(),
       ],
     );
 
     const effects = pet.getEffects();
-    await db.query(`DELETE FROM pet_status_effect WHERE pet_id = $1`, [pet.getId()]);
+    await db.query(`DELETE FROM pet_status_effect WHERE pet_id = $1`, [
+      pet.getId(),
+    ]);
     for (const effect of effects) {
+      if (!Number.isFinite(effect.expiresAt)) {
+        console.error("Invalid effect expiration:", {
+          type: effect.type,
+          expiresAt: effect.expiresAt,
+        });
+        throw new Error(`Invalid expiration for effect: ${effect.type}`);
+      }
+
+      const expiresAt = new Date(effect.expiresAt);
+
+      if (Number.isNaN(expiresAt.getTime())) {
+        console.error("Invalid effect date:", {
+          type: effect.type,
+          expiresAt: effect.expiresAt,
+        });
+        throw new Error(`Invalid date for effect: ${effect.type}`);
+      }
+
       await db.query(
         `INSERT INTO pet_status_effect (pet_id, type, expires_at)
      VALUES ($1, $2, $3)`,
-        [pet.getId(), effect.type, new Date(effect.expiresAt)],
+        [pet.getId(), effect.type, expiresAt],
       );
     }
   }
