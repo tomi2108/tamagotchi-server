@@ -100,15 +100,9 @@ export class PetService {
 
       case "equip": {
         if (!pet.canApplyEffects()) return events;
-
         const item = await this.inventory.equip(action.itemId, client);
         pet.equip(item);
-
-        events.push({
-          type: "item_equipped",
-          itemId: action.itemId,
-        });
-
+        events.push({ type: "item_equipped", itemId: action.itemId, });
         break;
       }
 

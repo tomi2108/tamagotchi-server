@@ -16,6 +16,7 @@ export class MqttStatePublisher {
       cleanliness: state.cleanliness,
       is_dead: state.is_dead,
       status: state.status,
+      equipment: state.equipment,
       updated_at: new Date().toISOString(),
     };
 
