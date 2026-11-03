@@ -122,15 +122,8 @@ export class Inventory {
     }
 
     await client.query(
-      `UPDATE pet_inventory
-       SET quantity = quantity - 1
-       WHERE item_id = $1`,
-      [itemId],
-    );
-
-    await client.query(
       `DELETE FROM pet_inventory
-       WHERE item_id = $1 AND quantity = 0`,
+       WHERE item_id = $1 AND quantity = 1`,
       [itemId],
     );
 
