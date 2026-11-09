@@ -230,11 +230,11 @@ export class Pet {
 
     this.state.hunger = Math.max(
       0,
-      this.state.hunger - dt * modifiers.hungerDecay,
+      this.state.hunger - (dt/2.5) * modifiers.hungerDecay,
     );
     this.state.hydration = Math.max(
       0,
-      this.state.hydration - dt * modifiers.hydrationDecay,
+      this.state.hydration - (dt/2) * modifiers.hydrationDecay,
     );
     this.state.happiness = Math.max(
       0,
@@ -244,7 +244,7 @@ export class Pet {
     if (this.state.status === PetStatus.sleeping)
       this.state.energy = Math.min(
         100,
-        this.state.energy + 30 * dt * modifiers.energyRecovery,
+        this.state.energy + 50 * dt * modifiers.energyRecovery,
       );
     else
       this.state.energy = Math.max(
@@ -261,7 +261,7 @@ export class Pet {
     this.updateThresholdEffects(now);
     this.updateCleanlinessConditions(now);
     this.tryRandomIllness(now);
-    const neglectLimit = 6 * 60 * MINUTE;
+    const neglectLimit = 8 * 60 * MINUTE;
     const hungerNeglected =
       this.state.hunger_zero_since !== null &&
       now - this.state.hunger_zero_since >= neglectLimit;
