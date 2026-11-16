@@ -230,15 +230,15 @@ export class Pet {
 
     this.state.hunger = Math.max(
       0,
-      this.state.hunger - (dt/2.5) * modifiers.hungerDecay,
+      this.state.hunger - (dt / 3) * modifiers.hungerDecay,
     );
     this.state.hydration = Math.max(
       0,
-      this.state.hydration - (dt/2) * modifiers.hydrationDecay,
+      this.state.hydration - (dt / 2) * modifiers.hydrationDecay,
     );
     this.state.happiness = Math.max(
       0,
-      this.state.happiness - (dt / 2) * modifiers.happinessDecay,
+      this.state.happiness - (dt / 4) * modifiers.happinessDecay,
     );
 
     if (this.state.status === PetStatus.sleeping)
@@ -249,7 +249,7 @@ export class Pet {
     else
       this.state.energy = Math.max(
         0,
-        this.state.energy - (dt / 2) * modifiers.energyDecay,
+        this.state.energy - (dt / 5) * modifiers.energyDecay,
       );
 
     if (this.state.hunger <= 0) this.state.hunger_zero_since ??= now;
