@@ -24,7 +24,7 @@ export class PetService {
     private inventory: Inventory,
     private scheduler: ActionScheduler,
     private dispatchAction: DispatchAction,
-  ) {}
+  ) { }
 
   async execute(
     pet: Pet,
@@ -38,6 +38,11 @@ export class PetService {
     switch (action.type) {
       case "playMinigame": {
         pet.playMinigame(action.score);
+        break;
+      }
+
+      case "shower": {
+        pet.shower();
         break;
       }
 

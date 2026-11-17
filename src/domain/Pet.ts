@@ -46,6 +46,11 @@ export class Pet {
   private effects: StatusEffect[];
   private cleanlinessLowSince: number | null = null;
 
+  shower() {
+    this.state.cleanliness = 100;
+  }
+
+
   constructor(
     private id: number,
     private state: PetState,
