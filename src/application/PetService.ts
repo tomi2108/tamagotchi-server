@@ -24,7 +24,7 @@ export class PetService {
     private inventory: Inventory,
     private scheduler: ActionScheduler,
     private dispatchAction: DispatchAction,
-  ) { }
+  ) {}
 
   async execute(
     pet: Pet,
@@ -43,6 +43,7 @@ export class PetService {
 
       case "shower": {
         pet.shower();
+        events.push({ type: "pet_bathed" });
         break;
       }
 
@@ -107,7 +108,7 @@ export class PetService {
         if (!pet.canApplyEffects()) return events;
         const item = await this.inventory.equip(action.itemId, client);
         pet.equip(item);
-        events.push({ type: "item_equipped", itemId: action.itemId, });
+        events.push({ type: "item_equipped", itemId: action.itemId });
         break;
       }
 

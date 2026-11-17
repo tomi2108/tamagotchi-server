@@ -143,12 +143,12 @@ POST http://{{host}}/minigames/scores
 Content-Type: application/json
 
 {
-  "gameCode": "memory",
-  "playerId": 1,
-  "score": 1000
+  "gameCode": "snake",
+  "playerId": 2,
+  "score": 301
 }
 
 ###
 
-GET http://{{host}}/minigames/memory/leaderboard
+GET http://{{host}}/minigames/snake/leaderboard
 

@@ -50,7 +50,6 @@ export class Pet {
     this.state.cleanliness = 100;
   }
 
-
   constructor(
     private id: number,
     private state: PetState,
