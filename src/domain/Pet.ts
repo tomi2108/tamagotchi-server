@@ -185,7 +185,7 @@ export class Pet {
     );
     this.state.cleanliness = Math.max(0, this.state.cleanliness - impact);
     this.state.energy = Math.max(0, this.state.energy - impact);
-    this.state.happiness = Math.min(100, this.state.happiness + impact);
+    this.state.happiness = Math.min(100, this.state.happiness + 2 * impact);
   }
 
   hydrate(): void {
