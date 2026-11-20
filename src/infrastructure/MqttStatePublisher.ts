@@ -7,6 +7,7 @@ export class MqttStatePublisher {
     const state = pet.getState();
 
     const payload = {
+      effects: pet.getEffects(),
       name: state.name,
       species: state.species,
       energy: state.energy,
