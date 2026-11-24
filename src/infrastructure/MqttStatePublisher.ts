@@ -23,7 +23,7 @@ export class MqttStatePublisher {
       updated_at: new Date().toISOString(),
     };
 
-    mqtt.publish("/state", JSON.stringify({ payload }), {
+    mqtt.publish("/state", JSON.stringify(payload), {
       qos: 1,
       retain: true,
     });
