@@ -7,7 +7,9 @@ export class MqttStatePublisher {
     const state = pet.getState();
 
     const payload = {
-      effects: pet.getEffects(),
+      effects: pet
+        .getEffects()
+        .map((e) => ({ ...e, expiresAt: new Date(e.expiresAt).toISOString() })),
       name: state.name,
       species: state.species,
       energy: state.energy,
@@ -21,13 +23,9 @@ export class MqttStatePublisher {
       updated_at: new Date().toISOString(),
     };
 
-    mqtt.publish(
-      "/state",
-      JSON.stringify({
-        ...payload,
-        updated_at: new Date().toISOString(),
-      }),
-      { qos: 1, retain: true },
-    );
+    mqtt.publish("/state", JSON.stringify({ payload }), {
+      qos: 1,
+      retain: true,
+    });
   }
 }
